@@ -1,17 +1,4 @@
-// Simple lang, but with each AbstractInstruction defined
-// on each individual singleton instruction
-
-use symbolic_stack_machines_core::environment::Env;
-use symbolic_stack_machines_core::machine::{
-    inner_interpreter::ConcreteInnerInterpreter, r#abstract::AbstractMachine,
-};
-use symbolic_stack_machines_core::memory::Memory;
-use symbolic_stack_machines_core::{
-    machine::outer_interpreter::{ConcreteOuterInterpreter, OuterInterpreter},
-    stack::{Stack, StackVal},
-};
-mod common;
-use common::simple_lang::*;
+use symbolic_stack_machines_core::{environment::Env, instructions::{push, add, sub}, memory::Memory, stack::{Stack, StackVal}, machine::Machine};
 
 #[test]
 fn test_abstract_machine() {
@@ -20,22 +7,16 @@ fn test_abstract_machine() {
     let pc = Some(0);
     let mem = Memory::default();
     let stack = Stack::default();
-    let machine = AbstractMachine {
+    let machine = Machine {
         stack,
         mem,
         env,
         pc,
-        pgm: &pgm,
+        pgm,
+        constraints: vec![],
     };
-    let inner_interpreter = Box::new(ConcreteInnerInterpreter {});
-    let outer_interpreter = ConcreteOuterInterpreter { inner_interpreter };
 
-    let res = *outer_interpreter
-        .run(machine)
-        .unwrap()
-        .stack
-        .peek(0)
-        .unwrap();
+    let res = *machine.run().stack.peek(0).unwrap();
 
     assert_eq!(res, StackVal::from(0));
 }
