@@ -1,7 +1,13 @@
-use symbolic_stack_machines_core::{environment::Env, instructions::{push, add, sub}, memory::Memory, stack::{Stack, StackVal}, machine::Machine};
+use symbolic_stack_machines::{
+    environment::Env,
+    instructions::{add, push, sub},
+    machine::Machine,
+    memory::Memory,
+    stack::{Stack, StackVal},
+};
 
 #[test]
-fn test_abstract_machine() {
+fn test_simple() {
     let pgm = vec![push(15), push(5), push(5), push(5), add(), add(), sub()];
     let env = Env {};
     let pc = Some(0);
