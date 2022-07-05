@@ -3,12 +3,12 @@ use crate::{machine::Machine, val::word::Word};
 #[derive(Clone)]
 pub struct Constraint {}
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Instruction {
     Add,
     Sub,
     IsZero,
-    Push,
+    Push(u8),
     Stop,
     JumpI,
     MLoad,
@@ -19,14 +19,14 @@ pub enum Instruction {
 impl Into<u8> for Instruction {
     fn into(self) -> u8 {
         match self {
-            Instruction::Add => todo!(),
-            Instruction::Sub => todo!(),
-            Instruction::IsZero => todo!(),
-            Instruction::Push => todo!(),
-            Instruction::Stop => todo!(),
-            Instruction::JumpI => todo!(),
-            Instruction::MLoad => todo!(),
-            Instruction::MStore => todo!(),
+            Instruction::Stop => 0x00,
+            Instruction::Add => 0x01,
+            Instruction::Sub => 0x03,
+            Instruction::IsZero => 0x15,
+            Instruction::MLoad => 0x51,
+            Instruction::MStore => 0x52,
+            Instruction::JumpI => 0x57,
+            Instruction::Push(n) => 0x60 + n - 1,
             Instruction::Lit(x) => x,
         }
     }
@@ -66,10 +66,11 @@ impl Instruction {
 
                 cont.push(m);
             }
-            Instruction::Push => {
-                let val = Word::from_bytes_vec(&m.pgm, m.pc.unwrap());
+            Instruction::Push(n) => {
+                let n_bytes = *n as usize;
+                let val = Word::from_bytes_vec(&m.pgm, m.pc.unwrap(), n_bytes);
                 m.stack.push(val);
-                m.pc = m.pc.map(|x| x + 1);
+                m.pc = m.pc.map(|x| x + n_bytes + 1);
                 cont.push(m);
             }
             Instruction::Stop => {
@@ -116,10 +117,14 @@ impl Instruction {
 
         cont
     }
+
+    pub fn as_bytes(pgm: Vec<Instruction>) -> Vec<u8> {
+        pgm.into_iter().map(|x| { x.into() }).collect()
+    }
 }
 
-pub fn push() -> Instruction {
-    Instruction::Push
+pub fn push1() -> Instruction {
+    Instruction::Push(1)
 }
 
 pub fn add() -> Instruction {

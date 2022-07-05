@@ -15,7 +15,7 @@ impl Memory {
     pub fn read_word(&self, idx: Word) -> Word {
         let idx_unwrapped = Into::<usize>::into(idx);
 
-        Word::from_bytes_vector(&self.inner, idx_unwrapped)
+        Word::from_bytes_vector(&self.inner, idx_unwrapped, 32)
     }
 
     pub fn read_byte(&self, idx: Word) -> Option<&Byte> {
