@@ -1,4 +1,4 @@
-use crate::{machine::Machine, val::word::{ZERO_WORD, Word, ONE_WORD}};
+use crate::{machine::Machine, val::word::Word};
 
 #[derive(Clone)]
 pub struct Constraint {}
@@ -8,11 +8,28 @@ pub enum Instruction {
     Add,
     Sub,
     IsZero,
-    Push(Word),
+    Push,
     Stop,
     JumpI,
     MLoad,
     MStore,
+    Lit(u8),
+}
+
+impl Into<u8> for Instruction {
+    fn into(self) -> u8 {
+        match self {
+            Instruction::Add => todo!(),
+            Instruction::Sub => todo!(),
+            Instruction::IsZero => todo!(),
+            Instruction::Push => todo!(),
+            Instruction::Stop => todo!(),
+            Instruction::JumpI => todo!(),
+            Instruction::MLoad => todo!(),
+            Instruction::MStore => todo!(),
+            Instruction::Lit(x) => x,
+        }
+    }
 }
 
 impl Instruction {
@@ -43,14 +60,15 @@ impl Instruction {
             Instruction::IsZero => {
                 let op = m.stack.pop().unwrap();
 
-                m.stack.push(op._eq(&ZERO_WORD).ite(ONE_WORD, ZERO_WORD));
+                m.stack.push(op._eq(&Word::zero()).ite(Word::one(), Word::zero()));
 
                 m.pc = m.pc.map(|x| x + 1);
 
                 cont.push(m);
             }
-            Instruction::Push(x) => {
-                m.stack.push(x.clone());
+            Instruction::Push => {
+                let val = Word::from_bytes_vec(&m.pgm, m.pc.unwrap());
+                m.stack.push(val);
                 m.pc = m.pc.map(|x| x + 1);
                 cont.push(m);
             }
@@ -62,7 +80,7 @@ impl Instruction {
                 let dest = m.stack.pop().unwrap();
                 let cond = m.stack.pop().unwrap();
 
-                if cond != ZERO_WORD {
+                if cond != Word::zero() {
                     let x = Into::<usize>::into(dest);
                     m.pc = Some(x);
                 } else {
@@ -73,7 +91,7 @@ impl Instruction {
             }
             Instruction::MLoad => {
                 let mem_idx = m.stack.pop().unwrap();
-                let mem_val = m.mem.read_word(mem_idx.clone()).unwrap();
+                let mem_val = m.mem.read_word(mem_idx.clone());
 
                 m.stack.push(mem_val);
 
@@ -91,14 +109,17 @@ impl Instruction {
 
                 cont.push(m);
             }
+            Instruction::Lit(x) => {
+                panic!("literal instruction {}", x);
+            }
         }
 
         cont
     }
 }
 
-pub fn push<T: Into<Word>>(x: T) -> Instruction {
-    Instruction::Push(x.into())
+pub fn push() -> Instruction {
+    Instruction::Push
 }
 
 pub fn add() -> Instruction {

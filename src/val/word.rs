@@ -1,41 +1,40 @@
+use im::Vector;
+use primitive_types::U256;
+
+use super::byte::Byte;
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub struct Word(u64);
+pub struct Word(U256);
 
-pub static ZERO_WORD: Word = Word(0);
-pub static ONE_WORD: Word = Word(1);
-
-static FALSE_WORD: Word = ZERO_WORD;
-static TRUE_WORD: Word = ONE_WORD;
-
-impl From<u64> for Word {
-    fn from(x: u64) -> Self {
-        Self(x)
+impl <T> From<T> for Word where U256: From<T> {
+    fn from(x: T) -> Self {
+        Self::from(U256::from(x))
     }
 }
 
-impl Into<u64> for Word {
-    fn into(self) -> u64 {
+impl Into<U256> for Word {
+    fn into(self) -> U256 {
         self.0
     }
 }
 
 impl Into<usize> for Word {
     fn into(self) -> usize {
-        self.0 as usize
+        self.0.as_usize()
     }
 }
 
 impl Word {
     pub fn _eq(&self, other: &Self) -> Self {
         if self == other {
-            TRUE_WORD
+            Self::true_word()
         } else {
-            FALSE_WORD
+            Self::false_word()
         }
     }
 
     pub fn ite(&self, then: Self, xelse: Self) -> Self {
-        if *self == TRUE_WORD {
+        if *self == Self::true_word() {
             then
         } else {
             xelse
@@ -56,5 +55,56 @@ impl std::ops::Sub for Word {
 
     fn sub(self, rhs: Self) -> Self::Output {
         Self(self.0 - rhs.0)
+    }
+}
+
+impl Word {
+    // Create a word from 32 bytes starting at idx in bs
+    pub fn from_bytes_vector<T: Into<u8> + Clone>(bs: &Vector<T>, idx: usize) -> Self {
+        Self::from_bytes(|offset| {
+            bs.get(idx + offset).cloned()
+        })
+    }
+
+    // Create a word from 32 bytes starting at idx in bs
+    pub fn from_bytes_vec<T: Into<u8> + Clone>(bs: &Vec<T>, idx: usize) -> Self {
+        Self::from_bytes(|offset| {
+            bs.get(idx + offset).cloned()
+        })
+    }
+
+    fn from_bytes<T: Into<u8> + Clone, F: Fn(usize) -> Option<T>>(f: F) -> Self {
+        let mut bytes: [u8; 32] = [0; 32];
+
+        for i in 0..=31 {
+            let byte: u8 = f(i).unwrap().into();
+            bytes[i] = byte;
+        }
+
+        Self::from(U256::from(bytes))
+    }
+
+    pub fn write_bytes(bs: &mut Vector<Byte>, idx: usize, val: Word) {
+        let u256: U256 = val.into();
+
+        for i in 0..=31 {
+            bs[idx + i] = u256.byte(i).into();
+        }
+    }
+
+    pub fn zero() -> Self { 
+        Word(U256::zero())
+    }
+
+    pub fn one() -> Self {
+        Word(U256::one())
+    }
+
+    pub fn false_word() -> Self {
+        Self::zero()
+    }
+
+    pub fn true_word() -> Self {
+        Self::one()
     }
 }

@@ -8,7 +8,7 @@ use symbolic_stack_machines::{
 
 #[test]
 fn test_simple() {
-    let pgm = vec![push(15), push(5), push(5), push(5), add(), add(), sub()];
+    let pgm = vec![push(), push(), push(), push(), add(), add(), sub()];
     let env = Env {};
     let pc = Some(0);
     let mem = Memory::default();
