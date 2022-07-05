@@ -1,3 +1,5 @@
+use im::Vector;
+
 use super::{
     record::{StackOpRecord, StackRecord},
     StackVal,
@@ -5,11 +7,11 @@ use super::{
 
 #[derive(Clone, Default)]
 pub struct Stack {
-    inner: Vec<StackVal>,
+    inner: Vector<StackVal>,
 }
 
 impl Stack {
-    pub fn new(init: Vec<StackVal>) -> Self {
+    pub fn new(init: Vector<StackVal>) -> Self {
         Self {
             inner: init,
         }
@@ -23,16 +25,15 @@ impl Stack {
     }
 
     pub fn apply(&self, r: StackRecord) -> Self {
-        // TODO(will) - we should use a copy on write data structure
         let mut inner = self.inner.clone();
 
         for c in r.changed {
             match c {
                 StackOpRecord::Pop => {
-                    inner.pop();
+                    inner.pop_back();
                 }
                 StackOpRecord::Push(x) => {
-                    inner.push(x);
+                    inner.push_back(x);
                 }
             };
         }

@@ -1,3 +1,5 @@
+use im::Vector;
+
 use crate::stack::StackVal;
 
 use super::{
@@ -7,11 +9,11 @@ use super::{
 
 #[derive(Clone, Default)]
 pub struct Memory {
-    inner: Vec<MemVal>,
+    inner: Vector<MemVal>,
 }
 
 impl Memory {
-    pub fn new(init: Vec<MemVal>) -> Self {
+    pub fn new(init: Vector<MemVal>) -> Self {
         Self {
             inner: init,
         }
@@ -40,7 +42,6 @@ impl Memory {
     }
 
     pub fn apply(&self, r: MemRecord) -> Self {
-        // TODO(will) - we should use a copy on write data structure
         let mut inner = self.inner.clone();
 
         for c in r.changed {
