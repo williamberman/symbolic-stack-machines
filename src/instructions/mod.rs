@@ -1,32 +1,7 @@
-use crate::environment::EnvRecord;
-use crate::machine::Machine;
-use crate::memory::*;
-use crate::stack::*;
+use crate::{machine::Machine, stack::{ZERO, ONE, StackVal}};
 
 #[derive(Clone)]
 pub struct Constraint {}
-
-pub struct ExecRecord {
-    pub stack_diff: Option<StackRecord>,
-    pub mem_diff: Option<MemRecord>,
-    pub env_diff: Option<EnvRecord>,
-    pub pc_change: Option<usize>,
-    pub halt: bool,
-    pub constraints: Option<Vec<Constraint>>,
-}
-
-impl Default for ExecRecord {
-    fn default() -> Self {
-        Self {
-            stack_diff: None,
-            mem_diff: None,
-            env_diff: None,
-            pc_change: None,
-            halt: false,
-            constraints: None,
-        }
-    }
-}
 
 #[derive(Clone)]
 pub enum Instruction {
@@ -41,111 +16,73 @@ pub enum Instruction {
 }
 
 impl Instruction {
-    pub fn exec(&self, m: &Machine) -> Vec<ExecRecord> {
+    pub fn exec(&self, mut m: Machine) -> Vec<Machine> {
+        let mut cont = vec![];
+
         match self {
             Instruction::Add => {
-                let mut change_log = ExecRecord::default();
+                let op_1 = m.stack.pop().unwrap();
+                let op_2 = m.stack.pop().unwrap();
 
-                let op_1 = m.stack.peek(0).unwrap();
-                let op_2 = m.stack.peek(1).unwrap();
-                let res = op_1.clone() + op_2.clone();
+                m.stack.push(op_1 + op_2);
 
-                change_log.stack_diff = Some(StackRecord {
-                    changed: vec![
-                        StackOpRecord::Pop,
-                        StackOpRecord::Pop,
-                        StackOpRecord::Push(res),
-                    ],
-                });
-
-                vec![change_log]
+                cont.push(m);
             }
             Instruction::Sub => {
-                let mut change_log = ExecRecord::default();
+                let op_1 = m.stack.pop().unwrap();
+                let op_2 = m.stack.pop().unwrap();
 
-                let op_1 = m.stack.peek(0).unwrap();
-                let op_2 = m.stack.peek(1).unwrap();
-                let res = op_1.clone() - op_2.clone();
+                m.stack.push(op_1 - op_2);
 
-                change_log.stack_diff = Some(StackRecord {
-                    changed: vec![
-                        StackOpRecord::Pop,
-                        StackOpRecord::Pop,
-                        StackOpRecord::Push(res),
-                    ],
-                });
-
-                vec![change_log]
+                cont.push(m);
             }
             Instruction::IsZero => {
-                let mut change_log = ExecRecord::default();
+                let op = m.stack.pop().unwrap();
 
-                let op = m.stack.peek(0).unwrap();
+                m.stack.push(op._eq(&ZERO).ite(ONE, ZERO));
 
-                let rv = op._eq(&ZERO).ite(ONE, ZERO);
-
-                change_log.stack_diff = Some(StackRecord {
-                    changed: vec![StackOpRecord::Pop, StackOpRecord::Push(rv)],
-                });
-
-                vec![change_log]
+                cont.push(m);
             }
             Instruction::Push(x) => {
-                let mut change_log = ExecRecord::default();
+                m.stack.push(x.clone());
 
-                change_log.stack_diff = Some(StackRecord {
-                    changed: vec![StackOpRecord::Push(x.clone())],
-                });
-
-                vec![change_log]
+                cont.push(m);
             }
             Instruction::Stop => {
-                let mut change_log = ExecRecord::default();
-                change_log.halt = true;
-                vec![change_log]
+                m.pc = None;
+
+                cont.push(m);
             }
             Instruction::JumpI => {
-                let mut change_log = ExecRecord::default();
+                let dest = m.stack.pop().unwrap();
+                let cond = m.stack.pop().unwrap();
 
-                let dest = m.stack.peek(0).unwrap();
-                let cond = m.stack.peek(1).unwrap();
-
-                if *cond != ZERO {
-                    let x = Into::<usize>::into(*dest);
-                    change_log.pc_change = Some(x);
+                if cond != ZERO {
+                    let x = Into::<usize>::into(dest);
+                    m.pc = Some(x);
                 }
 
-                vec![change_log]
+                cont.push(m);
             }
             Instruction::MLoad => {
-                let mut change_log = ExecRecord::default();
-
-                let mem_idx = m.stack.peek(0).unwrap();
+                let mem_idx = m.stack.pop().unwrap();
                 let mem_val = m.mem.read_word(mem_idx.clone()).unwrap();
 
-                change_log.stack_diff = Some(StackRecord {
-                    changed: vec![StackOpRecord::Pop, StackOpRecord::Push(mem_val)],
-                });
+                m.stack.push(mem_val);
 
-                vec![change_log]
+                cont.push(m);
             }
             Instruction::MStore => {
-                let mut change_log = ExecRecord::default();
+                let idx = m.stack.pop().unwrap();
+                let val = m.stack.pop().unwrap();
 
-                let mem_idx = m.stack.peek(0).unwrap();
-                let mem_val = m.stack.peek(1).unwrap();
+                m.mem.write_word(idx, val);
 
-                change_log.stack_diff = Some(StackRecord {
-                    changed: vec![StackOpRecord::Pop, StackOpRecord::Pop],
-                });
-
-                change_log.mem_diff = Some(MemRecord {
-                    changed: vec![MemOpRecord::Write(*mem_idx, *mem_val)],
-                });
-
-                vec![change_log]
+                cont.push(m);
             }
         }
+
+        cont
     }
 }
 
