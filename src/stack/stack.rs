@@ -1,7 +1,7 @@
 use im::Vector;
 use crate::val::word::Word;
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 pub struct Stack {
     inner: Vector<Word>,
 }

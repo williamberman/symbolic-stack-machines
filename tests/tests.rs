@@ -14,12 +14,12 @@ fn test_simple() {
     pgm.push(push1());
     pgm.push(lit(10));
     pgm.push(push1());
-    pgm.push(lit(5));
+    pgm.push(lit(2));
+    pgm.push(push1());
+    pgm.push(lit(3));
     pgm.push(add());
     pgm.push(add());
     pgm.push(sub());
-
-    dbg!(Instruction::as_bytes(pgm.clone()));
 
     let env = Env {};
     let pc = Some(0);

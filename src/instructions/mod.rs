@@ -68,7 +68,7 @@ impl Instruction {
             }
             Instruction::Push(n) => {
                 let n_bytes = *n as usize;
-                let val = Word::from_bytes_vec(&m.pgm, m.pc.unwrap(), n_bytes);
+                let val = Word::from_bytes_vec(&m.pgm, m.pc.unwrap() + 1, n_bytes);
                 m.stack.push(val);
                 m.pc = m.pc.map(|x| x + n_bytes + 1);
                 cont.push(m);
