@@ -3,21 +3,9 @@ use primitive_types::U256;
 
 use crate::instructions::Instruction;
 
-use super::byte::Byte;
+use super::{byte::Byte, symbolic::Symbolic};
 
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub enum Word {
-    C(U256),
-    S(String),
-    Add(Box<Word>, Box<Word>),
-    Sub(Box<Word>, Box<Word>),
-}
-
-impl From<U256> for Word {
-    fn from(x: U256) -> Self {
-        Self::C(x)
-    }
-}
+pub type Word = Symbolic<U256>;
 
 impl From<u32> for Word {
     fn from(x: u32) -> Self {
@@ -31,13 +19,10 @@ impl From<[u8; 32]> for Word {
     }
 }
 
+// TODO(will) - this should be derived from the trait
 impl Into<U256> for Word {
     fn into(self) -> U256 {
-        if let Word::C(x) = self {
-            return x;
-        }
-
-        panic!("invalid symbolic value {:?}", self);
+        self.concrete()
     }
 }
 
@@ -71,28 +56,6 @@ impl Word {
             then
         } else {
             xelse
-        }
-    }
-}
-
-impl std::ops::Add for Word {
-    type Output = Self;
-
-    fn add(self, rhs: Self) -> Self::Output {
-        match (self, rhs) {
-            (Word::C(l), Word::C(r)) => Word::C(l + r),
-            (l, r) => Word::Add(Box::new(l), Box::new(r)),
-        }
-    }
-}
-
-impl std::ops::Sub for Word {
-    type Output = Self;
-
-    fn sub(self, rhs: Self) -> Self::Output {
-        match (self, rhs) {
-            (Word::C(l), Word::C(r)) => Word::C(l - r),
-            (l, r) => Word::Sub(Box::new(l), Box::new(r)),
         }
     }
 }
