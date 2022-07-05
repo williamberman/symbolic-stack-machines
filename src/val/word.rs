@@ -1,44 +1,41 @@
-// TODO(will) - ultimately this will be replaced with a more general value
-// that implements an AST, etc...
-
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub struct StackVal(u64);
+pub struct Word(u64);
 
-pub static ZERO: StackVal = StackVal(0);
-pub static ONE: StackVal = StackVal(1);
+pub static ZERO_WORD: Word = Word(0);
+pub static ONE_WORD: Word = Word(1);
 
-static FALSE: StackVal = ZERO;
-static TRUE: StackVal = ONE;
+static FALSE_WORD: Word = ZERO_WORD;
+static TRUE_WORD: Word = ONE_WORD;
 
-impl From<u64> for StackVal {
+impl From<u64> for Word {
     fn from(x: u64) -> Self {
         Self(x)
     }
 }
 
-impl Into<u64> for StackVal {
+impl Into<u64> for Word {
     fn into(self) -> u64 {
         self.0
     }
 }
 
-impl Into<usize> for StackVal {
+impl Into<usize> for Word {
     fn into(self) -> usize {
         self.0 as usize
     }
 }
 
-impl StackVal {
+impl Word {
     pub fn _eq(&self, other: &Self) -> Self {
         if self == other {
-            TRUE
+            TRUE_WORD
         } else {
-            FALSE
+            FALSE_WORD
         }
     }
 
     pub fn ite(&self, then: Self, xelse: Self) -> Self {
-        if *self == TRUE {
+        if *self == TRUE_WORD {
             then
         } else {
             xelse
@@ -46,7 +43,7 @@ impl StackVal {
     }
 }
 
-impl std::ops::Add for StackVal {
+impl std::ops::Add for Word {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
@@ -54,7 +51,7 @@ impl std::ops::Add for StackVal {
     }
 }
 
-impl std::ops::Sub for StackVal {
+impl std::ops::Sub for Word {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {

@@ -1,4 +1,4 @@
-use crate::{machine::Machine, stack::{ZERO, ONE, StackVal}};
+use crate::{machine::Machine, val::word::{ZERO_WORD, Word, ONE_WORD}};
 
 #[derive(Clone)]
 pub struct Constraint {}
@@ -8,7 +8,7 @@ pub enum Instruction {
     Add,
     Sub,
     IsZero,
-    Push(StackVal),
+    Push(Word),
     Stop,
     JumpI,
     MLoad,
@@ -39,7 +39,7 @@ impl Instruction {
             Instruction::IsZero => {
                 let op = m.stack.pop().unwrap();
 
-                m.stack.push(op._eq(&ZERO).ite(ONE, ZERO));
+                m.stack.push(op._eq(&ZERO_WORD).ite(ONE_WORD, ZERO_WORD));
 
                 cont.push(m);
             }
@@ -57,7 +57,7 @@ impl Instruction {
                 let dest = m.stack.pop().unwrap();
                 let cond = m.stack.pop().unwrap();
 
-                if cond != ZERO {
+                if cond != ZERO_WORD {
                     let x = Into::<usize>::into(dest);
                     m.pc = Some(x);
                 }
@@ -86,7 +86,7 @@ impl Instruction {
     }
 }
 
-pub fn push<T: Into<StackVal>>(x: T) -> Instruction {
+pub fn push<T: Into<Word>>(x: T) -> Instruction {
     Instruction::Push(x.into())
 }
 

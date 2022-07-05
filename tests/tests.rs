@@ -3,7 +3,7 @@ use symbolic_stack_machines::{
     instructions::{add, push, sub},
     machine::Machine,
     memory::Memory,
-    stack::{Stack, StackVal},
+    stack::{Stack, Word},
 };
 
 #[test]
@@ -24,7 +24,7 @@ fn test_simple() {
 
     let res = *machine.run().stack.peek(0).unwrap();
 
-    assert_eq!(res, StackVal::from(0));
+    assert_eq!(res, Word::from(0));
 }
 
 #[test]

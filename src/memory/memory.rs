@@ -1,20 +1,18 @@
 use im::Vector;
 
-use crate::stack::StackVal;
-
-use super::val::MemVal;
+use crate::val::{byte::Byte, word::Word};
 
 #[derive(Clone, Default)]
 pub struct Memory {
-    inner: Vector<MemVal>,
+    inner: Vector<Byte>,
 }
 
 impl Memory {
-    pub fn new(init: Vector<MemVal>) -> Self {
+    pub fn new(init: Vector<Byte>) -> Self {
         Self { inner: init }
     }
 
-    pub fn read_word(&self, idx: StackVal) -> Option<StackVal> {
+    pub fn read_word(&self, idx: Word) -> Option<Word> {
         let idx_unwrapped = Into::<usize>::into(idx);
 
         // TODO(will): Check endianness/byte ordering
@@ -28,11 +26,11 @@ impl Memory {
         Some(u64::from_be_bytes(bytes).into())
     }
 
-    pub fn read_byte(&self, idx: StackVal) -> Option<&MemVal> {
+    pub fn read_byte(&self, idx: Word) -> Option<&Byte> {
         self.read_byte_inner(Into::<usize>::into(idx))
     }
 
-    pub fn write_word(&mut self, idx: StackVal, val: StackVal) {
+    pub fn write_word(&mut self, idx: Word, val: Word) {
         // TODO(will): Check endianness/byte ordering
         let idx_usize = Into::<usize>::into(idx);
         let val_unwrapped = Into::<u64>::into(val).to_be_bytes();
@@ -42,7 +40,7 @@ impl Memory {
         }
     }
 
-    fn read_byte_inner(&self, idx: usize) -> Option<&MemVal> {
+    fn read_byte_inner(&self, idx: usize) -> Option<&Byte> {
         self.inner.get(idx)
     }
 }
