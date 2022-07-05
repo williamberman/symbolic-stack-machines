@@ -26,6 +26,8 @@ impl Instruction {
 
                 m.stack.push(op_1 + op_2);
 
+                m.pc = m.pc.map(|x| x + 1);
+
                 cont.push(m);
             }
             Instruction::Sub => {
@@ -34,6 +36,8 @@ impl Instruction {
 
                 m.stack.push(op_1 - op_2);
 
+                m.pc = m.pc.map(|x| x + 1);
+
                 cont.push(m);
             }
             Instruction::IsZero => {
@@ -41,16 +45,17 @@ impl Instruction {
 
                 m.stack.push(op._eq(&ZERO_WORD).ite(ONE_WORD, ZERO_WORD));
 
+                m.pc = m.pc.map(|x| x + 1);
+
                 cont.push(m);
             }
             Instruction::Push(x) => {
                 m.stack.push(x.clone());
-
+                m.pc = m.pc.map(|x| x + 1);
                 cont.push(m);
             }
             Instruction::Stop => {
                 m.pc = None;
-
                 cont.push(m);
             }
             Instruction::JumpI => {
@@ -60,6 +65,8 @@ impl Instruction {
                 if cond != ZERO_WORD {
                     let x = Into::<usize>::into(dest);
                     m.pc = Some(x);
+                } else {
+                    m.pc = m.pc.map(|x| x + 1);
                 }
 
                 cont.push(m);
@@ -70,6 +77,8 @@ impl Instruction {
 
                 m.stack.push(mem_val);
 
+                m.pc = m.pc.map(|x| x + 1);
+
                 cont.push(m);
             }
             Instruction::MStore => {
@@ -77,6 +86,8 @@ impl Instruction {
                 let val = m.stack.pop().unwrap();
 
                 m.mem.write_word(idx, val);
+
+                m.pc = m.pc.map(|x| x + 1);
 
                 cont.push(m);
             }

@@ -3,7 +3,7 @@ use symbolic_stack_machines::{
     instructions::{add, push, sub},
     machine::Machine,
     memory::Memory,
-    stack::{Stack, Word},
+    stack::Stack, val::word::Word,
 };
 
 #[test]
@@ -22,32 +22,7 @@ fn test_simple() {
         constraints: vec![],
     };
 
-    let res = *machine.run().stack.peek(0).unwrap();
+    let res = *machine.run().stack.peek().unwrap();
 
     assert_eq!(res, Word::from(0));
-}
-
-#[test]
-fn test_im() {
-    let mut v = im::Vector::new();
-
-    v.push_back(1);
-    v.push_back(2);
-    v.push_back(3);
-
-    dbg!("*********");
-    dbg!(&v);
-
-    let mut w = v.clone();
-
-    dbg!("*********");
-    dbg!(&v);
-    dbg!(&w);
-
-    w.pop_back();
-    w.push_back(4);
-
-    dbg!("*********");
-    dbg!(&v);
-    dbg!(&w);
 }

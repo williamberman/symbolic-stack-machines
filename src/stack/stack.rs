@@ -18,4 +18,8 @@ impl Stack {
     pub fn push(&mut self, val: Word) {
         self.inner.push_back(val)
     }
+
+    pub fn peek(&self) -> Option<&Word> {
+        self.inner.back()
+    }
 }
