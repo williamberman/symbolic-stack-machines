@@ -5,12 +5,17 @@ use crate::instructions::Instruction;
 
 use super::byte::Byte;
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub struct Word(U256);
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub enum Word {
+    C(U256),
+    S(String),
+    Add(Box<Word>, Box<Word>),
+    Sub(Box<Word>, Box<Word>),
+}
 
 impl From<U256> for Word {
     fn from(x: U256) -> Self {
-        Self(x)
+        Self::C(x)
     }
 }
 
@@ -28,20 +33,26 @@ impl From<[u8; 32]> for Word {
 
 impl Into<U256> for Word {
     fn into(self) -> U256 {
-        self.0
+        if let Word::C(x) = self {
+            return x;
+        }
+
+        panic!("invalid symbolic value {:?}", self);
     }
 }
 
 impl Into<usize> for Word {
     fn into(self) -> usize {
-        self.0.as_usize()
+        let x: U256 = self.into();
+        x.as_usize()
     }
 }
 
 impl Into<[Instruction; 32]> for Word {
     fn into(self) -> [Instruction; 32] {
         let mut rv = [0; 32];
-        self.0.to_big_endian(&mut rv);
+        let x: U256 = self.into();
+        x.to_big_endian(&mut rv);
         rv.map(|x| Instruction::Lit(x))
     }
 }
@@ -68,7 +79,10 @@ impl std::ops::Add for Word {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
-        Self(self.0 + rhs.0)
+        match (self, rhs) {
+            (Word::C(l), Word::C(r)) => Word::C(l + r),
+            (l, r) => Word::Add(Box::new(l), Box::new(r)),
+        }
     }
 }
 
@@ -76,7 +90,10 @@ impl std::ops::Sub for Word {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        Self(self.0 - rhs.0)
+        match (self, rhs) {
+            (Word::C(l), Word::C(r)) => Word::C(l - r),
+            (l, r) => Word::Sub(Box::new(l), Box::new(r)),
+        }
     }
 }
 
@@ -110,11 +127,11 @@ impl Word {
     }
 
     pub fn zero() -> Self {
-        Word(U256::zero())
+        Word::C(U256::zero())
     }
 
     pub fn one() -> Self {
-        Word(U256::one())
+        Word::C(U256::one())
     }
 
     pub fn false_word() -> Self {
@@ -212,8 +229,8 @@ mod tests {
     pub fn word_from_bytes_mixed_2() {
         let actual = Word::from_bytes_vec(&Vec::from(BS), 10, 10);
         let expected = Word::from([
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 11, 12, 13,
-            14, 15, 16, 17, 18, 19
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 11, 12, 13, 14,
+            15, 16, 17, 18, 19,
         ]);
 
         assert_eq!(actual, expected);

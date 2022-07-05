@@ -34,7 +34,7 @@ fn test_simple() {
         constraints: vec![],
     };
 
-    let res = *machine.run().stack.peek().unwrap();
+    let res = machine.run().stack.peek().unwrap().clone();
 
     assert_eq!(res, Word::from(0));
 }
