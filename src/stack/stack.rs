@@ -1,5 +1,4 @@
 use super::{
-    config::StackConfig,
     record::{StackOpRecord, StackRecord},
     StackVal,
 };
@@ -7,15 +6,12 @@ use super::{
 #[derive(Clone, Default)]
 pub struct Stack {
     inner: Vec<StackVal>,
-    // TODO(will) - should be a reference
-    config: StackConfig,
 }
 
 impl Stack {
-    pub fn new(init: Vec<StackVal>, config: StackConfig) -> Self {
+    pub fn new(init: Vec<StackVal>) -> Self {
         Self {
             inner: init,
-            config,
         }
     }
 
@@ -43,7 +39,6 @@ impl Stack {
 
         Self {
             inner,
-            config: self.config.clone(),
         }
     }
 }

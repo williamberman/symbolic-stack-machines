@@ -1,7 +1,6 @@
 use crate::stack::StackVal;
 
 use super::{
-    config::MemoryConfig,
     record::{MemOpRecord, MemRecord},
     val::MemVal,
 };
@@ -9,15 +8,12 @@ use super::{
 #[derive(Clone, Default)]
 pub struct Memory {
     inner: Vec<MemVal>,
-    // TODO should be a reference
-    config: MemoryConfig,
 }
 
 impl Memory {
-    pub fn new(init: Vec<MemVal>, config: MemoryConfig) -> Self {
+    pub fn new(init: Vec<MemVal>) -> Self {
         Self {
             inner: init,
-            config,
         }
     }
 
@@ -63,7 +59,6 @@ impl Memory {
 
         Self {
             inner,
-            config: self.config.clone(),
         }
     }
 }

@@ -1,4 +1,3 @@
-mod config;
 mod memory;
 mod record;
 mod val;
