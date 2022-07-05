@@ -1,12 +1,17 @@
 use im::Vector;
 use primitive_types::U256;
 
+use crate::instructions::Instruction;
+
 use super::byte::Byte;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Word(U256);
 
-impl <T> From<T> for Word where U256: From<T> {
+impl<T> From<T> for Word
+where
+    U256: From<T>,
+{
     fn from(x: T) -> Self {
         Self::from(U256::from(x))
     }
@@ -21,6 +26,14 @@ impl Into<U256> for Word {
 impl Into<usize> for Word {
     fn into(self) -> usize {
         self.0.as_usize()
+    }
+}
+
+impl Into<[Instruction; 32]> for Word {
+    fn into(self) -> [Instruction; 32] {
+        let mut rv = [0; 32];
+        self.0.to_big_endian(&mut rv);
+        rv.map(|x| Instruction::Lit(x))
     }
 }
 
@@ -61,16 +74,12 @@ impl std::ops::Sub for Word {
 impl Word {
     // Create a word from 32 bytes starting at idx in bs
     pub fn from_bytes_vector<T: Into<u8> + Clone>(bs: &Vector<T>, idx: usize) -> Self {
-        Self::from_bytes(|offset| {
-            bs.get(idx + offset).cloned()
-        })
+        Self::from_bytes(|offset| bs.get(idx + offset).cloned())
     }
 
     // Create a word from 32 bytes starting at idx in bs
     pub fn from_bytes_vec<T: Into<u8> + Clone>(bs: &Vec<T>, idx: usize) -> Self {
-        Self::from_bytes(|offset| {
-            bs.get(idx + offset).cloned()
-        })
+        Self::from_bytes(|offset| bs.get(idx + offset).cloned())
     }
 
     fn from_bytes<T: Into<u8> + Clone, F: Fn(usize) -> Option<T>>(f: F) -> Self {
@@ -92,7 +101,7 @@ impl Word {
         }
     }
 
-    pub fn zero() -> Self { 
+    pub fn zero() -> Self {
         Word(U256::zero())
     }
 
@@ -106,5 +115,9 @@ impl Word {
 
     pub fn true_word() -> Self {
         Self::one()
+    }
+
+    pub fn constant_instruction<T>(val: T) -> [Instruction; 32] where Self: From<T> {
+        Self::from(val).into()
     }
 }

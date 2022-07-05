@@ -129,3 +129,11 @@ pub fn add() -> Instruction {
 pub fn sub() -> Instruction {
     Instruction::Sub
 }
+
+pub fn lit(b: u8) -> Instruction {
+    Instruction::Lit(b)
+}
+
+pub fn lit_32<T>(val: T) -> [Instruction; 32] where Word: From<T> {
+    Word::constant_instruction(val)
+}

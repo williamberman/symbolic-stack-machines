@@ -1,6 +1,6 @@
 use symbolic_stack_machines::{
     environment::Env,
-    instructions::{add, push, sub},
+    instructions::{add, push, sub, lit_32},
     machine::Machine,
     memory::Memory,
     stack::Stack, val::word::Word,
@@ -8,7 +8,17 @@ use symbolic_stack_machines::{
 
 #[test]
 fn test_simple() {
-    let pgm = vec![push(), push(), push(), push(), add(), add(), sub()];
+    let mut pgm = vec![];
+    pgm.push(push());
+    pgm.extend(lit_32(15));
+    pgm.push(push());
+    pgm.extend(lit_32(10));
+    pgm.push(push());
+    pgm.extend(lit_32(5));
+    pgm.push(add());
+    pgm.push(add());
+    pgm.push(sub());
+
     let env = Env {};
     let pc = Some(0);
     let mem = Memory::default();
