@@ -1,6 +1,6 @@
 use symbolic_stack_machines::{
     environment::Env,
-    instructions::{add, push1, sub, lit_32, Instruction, lit},
+    instructions::{add, push1, sub, lit},
     machine::Machine,
     memory::Memory,
     stack::Stack, val::word::Word,
