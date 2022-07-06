@@ -14,14 +14,21 @@ pub enum Instruction {
     Add,
     Sub,
     IsZero,
-    Push(u8),
     CallValue,
-    JumpI,
-    Jump,
+    CallDataSize,
+    Pop,
     MLoad,
     MStore,
-    Lit(Byte),
+    Jump,
+    JumpI,
+    Jumpdest,
+    Push(u8),
     Dup(u8),
+
+    // Literal byte, used as data.
+    Lit(Byte),
+
+    // Not actual EVM instruction. Used for testing
     Assert(Word),
 }
 
@@ -123,6 +130,10 @@ impl Instruction {
                     }
                 }
             }
+            Instruction::Jumpdest => {
+                m.pc = m.pc.map(|x| x + 1);
+                cont.push(m);
+            }
             Instruction::MLoad => {
                 let mem_idx = m.stack.pop().unwrap();
                 let mem_val = m.mem.read_word(mem_idx.clone());
@@ -145,6 +156,16 @@ impl Instruction {
             }
             Instruction::CallValue => {
                 m.stack.push(m.env.call_value.clone());
+                m.pc = m.pc.map(|x| x + 1);
+                cont.push(m);
+            }
+            Instruction::CallDataSize => {
+                m.stack.push(m.env.call_data_size.clone());
+                m.pc = m.pc.map(|x| x + 1);
+                cont.push(m);
+            }
+            Instruction::Pop => {
+                m.stack.pop();
                 m.pc = m.pc.map(|x| x + 1);
                 cont.push(m);
             }

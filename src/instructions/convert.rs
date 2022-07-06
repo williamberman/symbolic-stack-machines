@@ -10,10 +10,13 @@ impl Into<u8> for Instruction {
             Instruction::Sub => 0x03,
             Instruction::IsZero => 0x15,
             Instruction::CallValue => 0x34,
+            Instruction::CallDataSize => 0x36,
+            Instruction::Pop => 0x50,
             Instruction::MLoad => 0x51,
             Instruction::MStore => 0x52,
             Instruction::Jump => 0x56,
             Instruction::JumpI => 0x57,
+            Instruction::Jumpdest => 0x5B,
             Instruction::Push(n) => 0x60 + n - 1,
             Instruction::Dup(n) => 0x80 + n - 1,
             Instruction::Lit(x) => {
@@ -53,10 +56,13 @@ impl From<u8> for Instruction {
             0x03 => Instruction::Sub,
             0x15 => Instruction::IsZero,
             0x34 => Instruction::CallValue,
+            0x36 => Instruction::CallDataSize,
+            0x50 => Instruction::Pop,
             0x51 => Instruction::MLoad,
             0x52 => Instruction::MStore,
             0x56 => Instruction::Jump,
             0x57 => Instruction::JumpI,
+            0x5B => Instruction::Jumpdest,
             x => Instruction::Lit(Byte::C(x))
         }
     }

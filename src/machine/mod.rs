@@ -7,7 +7,7 @@ use crate::{
     val::constraint::Constraint, z3::solve_z3,
 };
 
-#[derive(Clone, Debug, PartialEq, Eq, Default)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Machine {
     pub stack: Stack,
     pub mem: Memory,
@@ -15,6 +15,19 @@ pub struct Machine {
     pub pc: Option<usize>,
     pub pgm: Rc<Vec<Instruction>>,
     pub constraints: Vector<Constraint>,
+}
+
+impl Default for Machine {
+    fn default() -> Self {
+        Self {
+            stack: Default::default(),
+            mem: Default::default(),
+            env: Default::default(),
+            pc: Some(0),
+            pgm: Default::default(),
+            constraints: Default::default(),
+        }
+    }
 }
 
 #[derive(Debug)]
