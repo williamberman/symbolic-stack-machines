@@ -20,6 +20,7 @@ pub enum Instruction {
     MLoad,
     MStore,
     Lit(Byte),
+    Dup(u8),
     Assert(Word),
 }
 
@@ -74,6 +75,12 @@ impl Instruction {
                 m.pc = m.pc.map(|x| x + n_bytes + 1);
                 cont.push(m);
             }
+            Instruction::Dup(n) => {
+                let val = m.stack.peek_n(*n as usize).unwrap().clone();
+                m.stack.push(val);
+                m.pc = m.pc.map(|x| x + 1);
+                cont.push(m);
+            },
             Instruction::Stop => {
                 m.pc = None;
                 cont.push(m);

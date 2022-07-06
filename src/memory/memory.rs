@@ -1,6 +1,6 @@
 use im::Vector;
 
-use crate::val::{byte::Byte, word::Word};
+use crate::val::{byte::{Byte, ZERO_BYTE}, word::Word};
 
 #[derive(Clone, Default, Debug, PartialEq, Eq)]
 pub struct Memory {
@@ -23,7 +23,16 @@ impl Memory {
     }
 
     pub fn write_word(&mut self, idx: Word, val: Word) {
-        Word::write_bytes(&mut self.inner, idx.into(), val.into());
+        let xidx: usize = idx.into();
+
+        // TODO(will) - What are the actual EVM semantics for memory extension
+        if self.inner.len() < xidx + 32 {
+            let n_additional_bytes_needed = xidx + 32 - self.inner.len();
+            let iter = (0..n_additional_bytes_needed).map(|_| { ZERO_BYTE.clone() });
+            self.inner.extend(iter);
+        }
+
+        Word::write_bytes(&mut self.inner, xidx, val.into());
     }
 
     fn read_byte_inner(&self, idx: usize) -> Option<&Byte> {

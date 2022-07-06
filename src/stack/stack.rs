@@ -22,4 +22,8 @@ impl Stack {
     pub fn peek(&self) -> Option<&Word> {
         self.inner.back()
     }
+
+    pub fn peek_n(&self, n: usize) -> Option<&Word> {
+        self.inner.get(self.inner.len() - n - 1)
+    }
 }

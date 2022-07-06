@@ -4,6 +4,8 @@ pub enum Byte {
     S(String)
 }
 
+pub static ZERO_BYTE: Byte = Byte::C(0);
+
 impl Into<u8> for Byte {
     fn into(self) -> u8 {
         if let Self::C(x) = self {

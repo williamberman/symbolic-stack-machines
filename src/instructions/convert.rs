@@ -14,6 +14,7 @@ impl Into<u8> for Instruction {
             Instruction::Jump => 0x56,
             Instruction::JumpI => 0x57,
             Instruction::Push(n) => 0x60 + n - 1,
+            Instruction::Dup(n) => 0x80 + n - 1,
             Instruction::Lit(x) => {
                 match x {
                     Byte::C(x) => x,
@@ -38,7 +39,11 @@ impl Into<Byte> for Instruction {
 impl From<u8> for Instruction {
     fn from(x: u8) -> Self {
         if x >= 0x60 && x <= 0x7f {
-            return Instruction::Push(x - 0x59);
+            return Instruction::Push(x - 0x5F);
+        }
+
+        if x >= 0x80 && x <= 0x8f {
+            return Instruction::Dup(x - 0x7F);
         }
 
         match x {
