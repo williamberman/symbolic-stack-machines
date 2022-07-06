@@ -1,6 +1,6 @@
 use primitive_types::U256;
 
-use crate::{machine::Machine, val::word::Word};
+use crate::{machine::Machine, val::{word::Word, byte::Byte}};
 
 #[derive(Clone, Debug)]
 pub enum Instruction {
@@ -12,7 +12,7 @@ pub enum Instruction {
     JumpI,
     MLoad,
     MStore,
-    Lit(u8),
+    Lit(Byte),
 }
 
 impl Into<u8> for Instruction {
@@ -26,7 +26,22 @@ impl Into<u8> for Instruction {
             Instruction::MStore => 0x52,
             Instruction::JumpI => 0x57,
             Instruction::Push(n) => 0x60 + n - 1,
+            Instruction::Lit(x) => {
+                match x {
+                    Byte::C(x) => x,
+                    // 0xfe is invalid opcode
+                    _ => 0xfe
+                }
+            },
+        }
+    }
+}
+
+impl Into<Byte> for Instruction {
+    fn into(self) -> Byte {
+        match self {
             Instruction::Lit(x) => x,
+            x => Byte::C(x.into())
         }
     }
 }
@@ -78,7 +93,7 @@ impl Instruction {
                 cont.push(m);
             }
             Instruction::JumpI => {
-                let dest = m.stack.pop().unwrap().concrete();
+                let dest: U256 = m.stack.pop().unwrap().into();
                 let cond = m.stack.pop().unwrap();
 
                 match cond {
@@ -130,7 +145,7 @@ impl Instruction {
                 cont.push(m);
             }
             Instruction::Lit(x) => {
-                panic!("literal instruction {}", x);
+                panic!("literal instruction {:?}", x);
             }
         }
 
@@ -155,7 +170,11 @@ pub fn sub() -> Instruction {
 }
 
 pub fn lit(b: u8) -> Instruction {
-    Instruction::Lit(b)
+    Instruction::Lit(Byte::C(b))
+}
+
+pub fn lit_sym(s: String) -> Instruction {
+    Instruction::Lit(Byte::S(s))
 }
 
 pub fn lit_32<T>(val: T) -> [Instruction; 32]

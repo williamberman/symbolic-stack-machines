@@ -3,9 +3,17 @@ use primitive_types::U256;
 
 use crate::instructions::Instruction;
 
-use super::{byte::Byte, symbolic::Symbolic};
+use super::{byte::Byte, constraint::Constraint};
 
-pub type Word = Symbolic<U256>;
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub enum Word {
+    C(U256),
+    S(String),
+    Add(Box<Word>, Box<Word>),
+    Sub(Box<Word>, Box<Word>),
+    Ite(Box<Constraint>, Box<Word>, Box<Word>),
+    Concat([Byte; 32]),
+}
 
 impl From<u32> for Word {
     fn from(x: u32) -> Self {
@@ -19,10 +27,25 @@ impl From<[u8; 32]> for Word {
     }
 }
 
-// TODO(will) - this should be derived from the trait
+impl From<[Byte; 32]> for Word {
+    fn from(x: [Byte; 32]) -> Self {
+        Word::Concat(x)
+    }
+}
+
 impl Into<U256> for Word {
     fn into(self) -> U256 {
-        self.concrete()
+        if let Self::C(x) = self {
+            return x;
+        }
+
+        panic!("invalid symbolic value {:?}", self);
+    }
+}
+
+impl From<U256> for Word {
+    fn from(x: U256) -> Self {
+        Self::C(x)
     }
 }
 
@@ -38,7 +61,7 @@ impl Into<[Instruction; 32]> for Word {
         let mut rv = [0; 32];
         let x: U256 = self.into();
         x.to_big_endian(&mut rv);
-        rv.map(|x| Instruction::Lit(x))
+        rv.map(|x| Instruction::Lit(Byte::C(x)))
     }
 }
 
@@ -53,24 +76,47 @@ impl Word {
 }
 
 impl Word {
-    pub fn from_bytes_vector<T: Into<u8> + Clone>(bs: &Vector<T>, idx: usize, len: usize) -> Self {
+    pub fn from_bytes_vector<T: Into<Byte> + Clone>(
+        bs: &Vector<T>,
+        idx: usize,
+        len: usize,
+    ) -> Self {
         Self::from_bytes(len, |offset| bs.get(idx + offset).cloned())
     }
 
-    pub fn from_bytes_vec<T: Into<u8> + Clone>(bs: &Vec<T>, idx: usize, len: usize) -> Self {
+    pub fn from_bytes_vec<T: Into<Byte> + Clone>(bs: &Vec<T>, idx: usize, len: usize) -> Self {
         Self::from_bytes(len, |offset| bs.get(idx + offset).cloned())
     }
 
-    // Create a word from len bytes starting in bs
-    fn from_bytes<T: Into<u8> + Clone, F: Fn(usize) -> Option<T>>(len: usize, f: F) -> Self {
+    fn from_bytes<T: Into<Byte> + Clone, F: Fn(usize) -> Option<T>>(len: usize, f: F) -> Self {
         let mut bytes: [u8; 32] = [0; 32];
+        // TODO(will): Should be better way to initialize array
+        let mut sym_bytes: [Byte; 32] = bytes.map(|x| { x.into() });
+
+        let mut all_concrete = true;
 
         for i in 0..=(len - 1) {
-            let byte: u8 = f(i).unwrap().into();
-            bytes[32 - len + i] = byte;
+            let write_idx = 32 - len + i;
+
+            let sym_byte: Byte = f(i).unwrap().into();
+
+            sym_bytes[write_idx] = sym_byte.clone();
+
+            match sym_byte {
+                Byte::C(x) => {
+                    bytes[write_idx] = x;
+                }
+                Byte::S(_) => {
+                    all_concrete = false;
+                }
+            }
         }
 
-        Self::from(U256::from(bytes))
+        if all_concrete {
+            return Self::from(U256::from(bytes));
+        }
+
+        Word::from(sym_bytes)
     }
 
     pub fn write_bytes(bs: &mut Vector<Byte>, idx: usize, val: Word) {
@@ -97,6 +143,10 @@ impl Word {
         Self::one()
     }
 
+    pub fn _eq(self, other: Self) -> Constraint {
+        Constraint::Eq(Box::new(self), Box::new(other))
+    }
+
     pub fn constant_instruction<T>(val: T) -> [Instruction; 32]
     where
         Self: From<T>,
@@ -104,6 +154,29 @@ impl Word {
         Self::from(val).into()
     }
 }
+
+impl std::ops::Add for Word {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        match (self, rhs) {
+            (Self::C(l), Self::C(r)) => Self::C(l + r),
+            (l, r) => Self::Add(Box::new(l), Box::new(r)),
+        }
+    }
+}
+
+impl std::ops::Sub for Word {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        match (self, rhs) {
+            (Self::C(l), Self::C(r)) => Self::C(l - r),
+            (l, r) => Self::Sub(Box::new(l), Box::new(r)),
+        }
+    }
+}
+
 mod tests {
     use crate::val::word::Word;
 
