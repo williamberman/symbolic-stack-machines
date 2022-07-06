@@ -198,7 +198,6 @@ fn test_symbolic_multiple_machines_filtered() {
 
     let sym_results = machine.run_sym();
 
-
     assert_eq!(sym_results.pruned.len(), 1);
 
     assert_eq!(sym_results.pruned.get(0).unwrap().stack.peek().unwrap(), &Word::from(100));
