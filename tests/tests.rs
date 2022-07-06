@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use im::Vector;
 use symbolic_stack_machines::{
     environment::Env,
-    instructions::{add, iszero, jumpi, lit, push1, stop, sub},
+    instructions::{add, iszero, jumpi, lit, push1, stop, sub, assert_ins, jump},
     machine::Machine,
     memory::Memory,
     stack::Stack,
@@ -153,4 +153,58 @@ fn test_symbolic_multiple_machines() {
             bytes: HashMap::from([("x".into(), 252)])
         }
     );
+}
+
+#[test]
+fn test_symbolic_multiple_machines_filtered() {
+    let pgm = vec![
+        push1(),         // 0
+        lit(1),          // 1
+        push1(),         // 2
+        lit(2),          // 3
+        push1(),         // 4
+        lit("x"),        // 5
+        add(),           // 6
+        sub(),           // 7
+        push1(),         // 8
+        lit(4),          // 9
+        sub(),           // 10
+        iszero(),        // 11
+        push1(),         // 12
+        lit(20),         // 13
+        jumpi(),         // 14
+        push1(),         // 15
+        lit(100),        // 16
+        push1(),         // 17
+        lit(22),         // 18
+        jump(),          // 19
+        push1(),         // 20
+        lit(200),        // 21
+        assert_ins(200), // 22
+    ];
+
+    let env = Env {};
+    let pc = Some(0);
+    let mem = Memory::default();
+    let stack = Stack::default();
+    let machine = Machine {
+        stack,
+        mem,
+        env,
+        pc,
+        pgm,
+        constraints: Vector::new(),
+    };
+
+    let sym_results = machine.run_sym();
+
+
+    assert_eq!(sym_results.pruned.len(), 1);
+
+    assert_eq!(sym_results.pruned.get(0).unwrap().stack.peek().unwrap(), &Word::from(100));
+
+    assert_eq!(sym_results.leaves.len(), 1);
+
+    assert_eq!(sym_results.leaves.get(0).unwrap().stack.peek().unwrap(), &Word::from(200));
+
 }

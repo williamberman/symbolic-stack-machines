@@ -15,6 +15,7 @@ pub struct Machine {
     pub constraints: Vector<Constraint>,
 }
 
+#[derive(Debug)]
 pub struct SymResults {
     pub leaves: Vec<Machine>,
     pub pruned: Vec<Machine>,

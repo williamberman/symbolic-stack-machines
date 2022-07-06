@@ -13,9 +13,11 @@ pub enum Instruction {
     Push(u8),
     Stop,
     JumpI,
+    Jump,
     MLoad,
     MStore,
     Lit(Byte),
+    Assert(Word),
 }
 
 impl Into<u8> for Instruction {
@@ -27,6 +29,7 @@ impl Into<u8> for Instruction {
             Instruction::IsZero => 0x15,
             Instruction::MLoad => 0x51,
             Instruction::MStore => 0x52,
+            Instruction::Jump => 0x56,
             Instruction::JumpI => 0x57,
             Instruction::Push(n) => 0x60 + n - 1,
             Instruction::Lit(x) => {
@@ -36,6 +39,7 @@ impl Into<u8> for Instruction {
                     _ => 0xfe,
                 }
             }
+            Instruction::Assert(_) => 0xfe,
         }
     }
 }
@@ -85,9 +89,7 @@ impl Instruction {
                             Word::zero()
                         }
                     }
-                    op => {
-                        op._eq(Word::zero()).ite(Word::one(), Word::zero())
-                    }
+                    op => op._eq(Word::zero()).ite(Word::one(), Word::zero()),
                 };
 
                 m.stack.push(to_push);
@@ -104,6 +106,11 @@ impl Instruction {
             }
             Instruction::Stop => {
                 m.pc = None;
+                cont.push(m);
+            }
+            Instruction::Jump => {
+                let dest: U256 = m.stack.pop().unwrap().into();
+                m.pc = Some(dest.as_usize());
                 cont.push(m);
             }
             Instruction::JumpI => {
@@ -161,6 +168,15 @@ impl Instruction {
             Instruction::Lit(x) => {
                 panic!("literal instruction {:?}", x);
             }
+            Instruction::Assert(w) => {
+                let op = m.stack.peek().unwrap().clone();
+
+                m.constraints.push_back(op._eq(w.clone()));
+
+                m.pc = m.pc.map(|x| x + 1);
+
+                cont.push(m);
+            }
         }
 
         cont
@@ -198,10 +214,18 @@ pub fn iszero() -> Instruction {
     Instruction::IsZero
 }
 
+pub fn jump() -> Instruction {
+    Instruction::Jump
+}
+
 pub fn jumpi() -> Instruction {
     Instruction::JumpI
 }
 
 pub fn stop() -> Instruction {
     Instruction::Stop
+}
+
+pub fn assert_ins<T: Into<Word>>(x: T) -> Instruction {
+    Instruction::Assert(x.into())
 }
