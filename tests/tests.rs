@@ -119,7 +119,11 @@ fn test_symbolic_multiple_machines() {
         constraints: Vector::new(),
     };
 
-    let ms = machine.run_sym();
+    let sym_results = machine.run_sym();
+
+    assert_eq!(sym_results.pruned, vec![]);
+
+    let ms = sym_results.leaves;
 
     assert_eq!(ms.len(), 2);
 

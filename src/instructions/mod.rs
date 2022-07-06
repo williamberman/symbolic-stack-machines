@@ -5,7 +5,7 @@ use crate::{
     val::{byte::Byte, word::Word},
 };
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Instruction {
     Add,
     Sub,

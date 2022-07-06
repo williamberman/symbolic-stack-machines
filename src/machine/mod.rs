@@ -1,10 +1,11 @@
 use im::Vector;
 
 use crate::{
-    environment::Env, instructions::Instruction, memory::Memory, stack::Stack, val::constraint::Constraint,
+    environment::Env, instructions::Instruction, memory::Memory, stack::Stack,
+    val::constraint::Constraint, z3::solve_z3,
 };
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Machine {
     pub stack: Stack,
     pub mem: Memory,
@@ -12,6 +13,11 @@ pub struct Machine {
     pub pc: Option<usize>,
     pub pgm: Vec<Instruction>,
     pub constraints: Vector<Constraint>,
+}
+
+pub struct SymResults {
+    pub leaves: Vec<Machine>,
+    pub pruned: Vec<Machine>,
 }
 
 impl Machine {
@@ -25,17 +31,27 @@ impl Machine {
         x
     }
 
-    pub fn run_sym(self) -> Vec<Self> {
+    pub fn run_sym(self) -> SymResults {
         let mut trace_tree: Vec<Machine> = vec![self];
 
         let mut leaves: Vec<Machine> = vec![];
+        let mut pruned: Vec<Machine> = vec![];
 
         loop {
             let start_branch = trace_tree.pop();
             if let Some(mach) = start_branch {
                 if mach.can_continue() {
                     let new_machines = mach.step_sym();
-                    trace_tree.extend(new_machines);
+                    new_machines.into_iter().for_each(|m| {
+                        if m.constraints.is_empty() {
+                            trace_tree.push(m)
+                        } else {
+                            match solve_z3(&m.constraints, vec![], vec![]) {
+                                Some(_) => trace_tree.push(m),
+                                None => pruned.push(m),
+                            }
+                        }
+                    });
                 } else {
                     leaves.push(mach);
                 }
@@ -44,7 +60,7 @@ impl Machine {
             }
         }
 
-        leaves
+        SymResults { leaves, pruned }
     }
 
     pub fn step(self) -> Machine {

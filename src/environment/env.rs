@@ -1,6 +1,6 @@
 use super::record::EnvRecord;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Env {}
 
 impl Env {
