@@ -13,7 +13,7 @@ impl Memory {
     }
 
     pub fn read_word(&self, idx: Word) -> Word {
-        let idx_unwrapped = Into::<usize>::into(idx);
+        let idx_unwrapped: usize = idx.into();
 
         Word::from_bytes_vector(&self.inner, idx_unwrapped, 32)
     }

@@ -28,6 +28,18 @@ impl From<u32> for Word {
     }
 }
 
+impl From<i32> for Word {
+    fn from(x: i32) -> Self {
+        Self::from(U256::from(x))
+    }
+}
+
+impl From<usize> for Word {
+    fn from(x: usize) -> Self {
+        Self::from(U256::from(x))
+    }
+}
+
 impl From<[u8; 32]> for Word {
     fn from(x: [u8; 32]) -> Self {
         Self::from(U256::from(x))

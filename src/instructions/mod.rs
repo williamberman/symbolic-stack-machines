@@ -16,6 +16,7 @@ pub enum Instruction {
     Lt,
     IsZero,
     CallValue,
+    CallDataLoad,
     CallDataSize,
     Pop,
     MLoad,
@@ -166,8 +167,14 @@ impl Instruction {
                 m.pc += 1;
                 cont.push(m);
             }
+            Instruction::CallDataLoad => {
+                let idx = m.stack.pop().unwrap();
+                m.stack.push(m.calldata.read_word(idx));
+                m.pc += 1;
+                cont.push(m);
+            }
             Instruction::CallDataSize => {
-                m.stack.push(m.env.call_data_size.clone());
+                m.stack.push(m.calldata.size());
                 m.pc += 1;
                 cont.push(m);
             }

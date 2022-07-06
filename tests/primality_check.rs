@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use symbolic_stack_machines::{instructions::parse_bytecode, machine::Machine};
 
 // // SPDX-License-Identifier: UNLICENSED
@@ -27,4 +29,17 @@ pub fn test_primality_check_empty_calldata() {
 
     assert_eq!(m.env.revert_offset, Some(0.into()));
     assert_eq!(m.env.revert_length, Some(0.into()));
+}
+
+#[test]
+pub fn test_primality_check_wrong_calldata() {
+    let pgm = parse_bytecode(BYTECODE);
+    let mut m = Machine::new(pgm);
+
+    m.calldata = Rc::new(vec![0_u8, 0, 0, 0].into());
+
+    let res = m.run_sym();
+
+    dbg!(res.leaves.len());
+    dbg!(res.pruned.len());
 }

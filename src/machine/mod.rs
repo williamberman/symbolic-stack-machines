@@ -3,7 +3,7 @@ use std::rc::Rc;
 use im::Vector;
 
 use crate::{
-    environment::Env, instructions::Instruction, memory::Memory, stack::Stack,
+    calldata::Calldata, environment::Env, instructions::Instruction, memory::Memory, stack::Stack,
     val::constraint::Constraint, z3::solve_z3,
 };
 
@@ -14,8 +14,9 @@ pub struct Machine {
     pub env: Env,
     pub pc: usize,
     pub pgm: Rc<Vec<Instruction>>,
+    pub calldata: Rc<Calldata>,
     pub constraints: Vector<Constraint>,
-    pub halt: bool
+    pub halt: bool,
 }
 
 impl Default for Machine {
@@ -26,6 +27,7 @@ impl Default for Machine {
             env: Default::default(),
             pc: 0,
             pgm: Default::default(),
+            calldata: Default::default(),
             constraints: Default::default(),
             halt: false,
         }
