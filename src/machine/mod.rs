@@ -4,7 +4,7 @@ use crate::{
     environment::Env, instructions::Instruction, memory::Memory, stack::Stack, val::constraint::Constraint,
 };
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Machine {
     pub stack: Stack,
     pub mem: Memory,

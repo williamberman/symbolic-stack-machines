@@ -2,7 +2,7 @@ use im::Vector;
 
 use crate::val::{byte::Byte, word::Word};
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 pub struct Memory {
     inner: Vector<Byte>,
 }

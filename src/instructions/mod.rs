@@ -1,6 +1,9 @@
 use primitive_types::U256;
 
-use crate::{machine::Machine, val::{word::Word, byte::Byte}};
+use crate::{
+    machine::Machine,
+    val::{byte::Byte, word::Word},
+};
 
 #[derive(Clone, Debug)]
 pub enum Instruction {
@@ -30,9 +33,9 @@ impl Into<u8> for Instruction {
                 match x {
                     Byte::C(x) => x,
                     // 0xfe is invalid opcode
-                    _ => 0xfe
+                    _ => 0xfe,
                 }
-            },
+            }
         }
     }
 }
@@ -41,7 +44,7 @@ impl Into<Byte> for Instruction {
     fn into(self) -> Byte {
         match self {
             Instruction::Lit(x) => x,
-            x => Byte::C(x.into())
+            x => Byte::C(x.into()),
         }
     }
 }
@@ -74,9 +77,20 @@ impl Instruction {
             Instruction::IsZero => {
                 let op = m.stack.pop().unwrap();
 
-                m.stack
-                    .push(op._eq(Word::zero()).ite(Word::one(), Word::zero()));
+                let to_push = match op {
+                    Word::C(op) => {
+                        if op == U256::zero() {
+                            Word::one()
+                        } else {
+                            Word::zero()
+                        }
+                    }
+                    op => {
+                        op._eq(Word::zero()).ite(Word::one(), Word::zero())
+                    }
+                };
 
+                m.stack.push(to_push);
                 m.pc = m.pc.map(|x| x + 1);
 
                 cont.push(m);
@@ -182,4 +196,16 @@ where
     Word: From<T>,
 {
     Word::constant_instruction(val)
+}
+
+pub fn iszero() -> Instruction {
+    Instruction::IsZero
+}
+
+pub fn jumpi() -> Instruction {
+    Instruction::JumpI
+}
+
+pub fn stop() -> Instruction {
+    Instruction::Stop
 }

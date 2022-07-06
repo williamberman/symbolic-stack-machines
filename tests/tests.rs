@@ -1,27 +1,28 @@
 use im::Vector;
 use symbolic_stack_machines::{
     environment::Env,
-    instructions::{add, lit, lit_sym, push1, sub},
+    instructions::{add, iszero, jumpi, lit, lit_sym, push1, stop, sub},
     machine::Machine,
     memory::Memory,
     stack::Stack,
-    val::{word::Word, byte::Byte},
+    val::{byte::Byte, word::Word},
 };
 
 #[test]
 fn test_simple() {
-    let mut pgm = vec![];
-    pgm.push(push1());
-    pgm.push(lit(15));
-    pgm.push(push1());
-    pgm.push(lit(10));
-    pgm.push(push1());
-    pgm.push(lit(2));
-    pgm.push(push1());
-    pgm.push(lit(3));
-    pgm.push(add());
-    pgm.push(add());
-    pgm.push(sub());
+    let pgm = vec![
+        push1(),
+        lit(15),
+        push1(),
+        lit(10),
+        push1(),
+        lit(2),
+        push1(),
+        lit(3),
+        add(),
+        add(),
+        sub(),
+    ];
 
     let env = Env {};
     let pc = Some(0);
@@ -42,16 +43,17 @@ fn test_simple() {
 }
 
 #[test]
-fn test_symbolic() {
-    let mut pgm = vec![];
-    pgm.push(push1());
-    pgm.push(lit_sym("x".into()));
-    pgm.push(push1());
-    pgm.push(lit(2));
-    pgm.push(push1());
-    pgm.push(lit(3));
-    pgm.push(add());
-    pgm.push(sub());
+fn test_symbolic_single_machine() {
+    let pgm = vec![
+        push1(),
+        lit_sym("x".into()),
+        push1(),
+        lit(2),
+        push1(),
+        lit(3),
+        add(),
+        sub(),
+    ];
 
     let env = Env {};
     let pc = Some(0);
@@ -74,4 +76,62 @@ fn test_symbolic() {
     let expected = Word::Sub(Box::new(Word::from(5)), Box::new(Word::Concat(sym)));
 
     assert_eq!(res, expected);
+}
+
+#[test]
+fn test_symbolic_multiple_machines() {
+    let pgm = vec![
+        push1(),
+        lit(1),
+        push1(),
+        lit(2),
+        push1(),
+        lit_sym("x".into()),
+        add(),
+        sub(),
+        push1(),
+        lit(4),
+        sub(),
+        iszero(),
+        push1(),
+        lit(18),
+        jumpi(),
+        push1(),
+        lit(100),
+        stop(),
+        push1(),
+        lit(200),
+    ];
+
+    let env = Env {};
+    let pc = Some(0);
+    let mem = Memory::default();
+    let stack = Stack::default();
+    let machine = Machine {
+        stack,
+        mem,
+        env,
+        pc,
+        pgm,
+        constraints: Vector::new(),
+    };
+
+    let ms = machine.run_sym();
+
+    assert_eq!(ms.len(), 2);
+
+    let take_jump = ms.get(0).unwrap();
+    let no_take_jump = ms.get(1).unwrap();
+
+    assert_eq!(
+        take_jump.stack.peek().unwrap(),
+        &Word::from(200)
+    );
+
+    assert_eq!(
+        no_take_jump.stack.peek().unwrap(),
+        &Word::from(100)
+    );
+
+    // TODO solve constraints
 }
