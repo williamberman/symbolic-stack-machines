@@ -11,6 +11,7 @@ pub enum Word {
     S(String),
     Add(Box<Word>, Box<Word>),
     Sub(Box<Word>, Box<Word>),
+    Lt(Box<Word>, Box<Word>),
     Ite(Box<Constraint>, Box<Word>, Box<Word>),
     Concat([Byte; 32]),
 }
@@ -158,6 +159,19 @@ impl Word {
         Self: From<T>,
     {
         Self::from(val).into()
+    }
+
+    pub fn _lt(self, other: Word) -> Word {
+        match (self, other) {
+            (Word::C(l), Word::C(r)) => {
+                if l < r {
+                    Word::one()
+                } else {
+                    Word::zero()
+                }
+            },
+            (l, r) => Word::Lt(Box::new(l), Box::new(r))
+        }
     }
 }
 

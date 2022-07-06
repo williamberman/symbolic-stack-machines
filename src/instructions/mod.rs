@@ -13,6 +13,7 @@ pub enum Instruction {
     Stop,
     Add,
     Sub,
+    Lt,
     IsZero,
     CallValue,
     CallDataSize,
@@ -24,6 +25,7 @@ pub enum Instruction {
     Jumpdest,
     Push(u8),
     Dup(u8),
+    Revert,
 
     // Literal byte, used as data.
     Lit(Byte),
@@ -43,7 +45,7 @@ impl Instruction {
 
                 m.stack.push(op_1 + op_2);
 
-                m.pc = m.pc.map(|x| x + 1);
+                m.pc += 1;
 
                 cont.push(m);
             }
@@ -53,8 +55,15 @@ impl Instruction {
 
                 m.stack.push(op_1 - op_2);
 
-                m.pc = m.pc.map(|x| x + 1);
+                m.pc += 1;
+                cont.push(m);
+            }
+            Instruction::Lt => {
+                let op_1 = m.stack.pop().unwrap();
+                let op_2 = m.stack.pop().unwrap();
 
+                m.stack.push(op_1._lt(op_2));
+                m.pc += 1;
                 cont.push(m);
             }
             Instruction::IsZero => {
@@ -72,30 +81,30 @@ impl Instruction {
                 };
 
                 m.stack.push(to_push);
-                m.pc = m.pc.map(|x| x + 1);
+                m.pc += 1;
 
                 cont.push(m);
             }
             Instruction::Push(n) => {
                 let n_bytes = *n as usize;
-                let val = Word::from_bytes_vec(&m.pgm, m.pc.unwrap() + 1, n_bytes);
+                let val = Word::from_bytes_vec(&m.pgm, m.pc + 1, n_bytes);
                 m.stack.push(val);
-                m.pc = m.pc.map(|x| x + n_bytes + 1);
+                m.pc += n_bytes + 1;
                 cont.push(m);
             }
             Instruction::Dup(n) => {
                 let val = m.stack.peek_n(*n as usize - 1).unwrap().clone();
                 m.stack.push(val);
-                m.pc = m.pc.map(|x| x + 1);
+                m.pc += 1;
                 cont.push(m);
-            },
+            }
             Instruction::Stop => {
-                m.pc = None;
+                m.halt = true;
                 cont.push(m);
             }
             Instruction::Jump => {
                 let dest: U256 = m.stack.pop().unwrap().into();
-                m.pc = Some(dest.as_usize());
+                m.pc = dest.as_usize();
                 cont.push(m);
             }
             Instruction::JumpI => {
@@ -105,9 +114,9 @@ impl Instruction {
                 match cond {
                     Word::C(cond) => {
                         if cond != U256::zero() {
-                            m.pc = Some(dest.as_usize());
+                            m.pc = dest.as_usize();
                         } else {
-                            m.pc = m.pc.map(|x| x + 1);
+                            m.pc += 1;
                         }
 
                         cont.push(m);
@@ -122,8 +131,8 @@ impl Instruction {
                         falls_through.constraints.push_back(falls_through_cond);
                         takes_target.constraints.push_back(takes_target_cond);
 
-                        falls_through.pc = falls_through.pc.map(|x| x + 1);
-                        takes_target.pc = Some(dest.as_usize());
+                        falls_through.pc += 1;
+                        takes_target.pc = dest.as_usize();
 
                         cont.push(falls_through);
                         cont.push(takes_target);
@@ -131,7 +140,7 @@ impl Instruction {
                 }
             }
             Instruction::Jumpdest => {
-                m.pc = m.pc.map(|x| x + 1);
+                m.pc += 1;
                 cont.push(m);
             }
             Instruction::MLoad => {
@@ -140,8 +149,7 @@ impl Instruction {
 
                 m.stack.push(mem_val);
 
-                m.pc = m.pc.map(|x| x + 1);
-
+                m.pc += 1;
                 cont.push(m);
             }
             Instruction::MStore => {
@@ -150,23 +158,30 @@ impl Instruction {
 
                 m.mem.write_word(idx, val);
 
-                m.pc = m.pc.map(|x| x + 1);
-
+                m.pc += 1;
                 cont.push(m);
             }
             Instruction::CallValue => {
                 m.stack.push(m.env.call_value.clone());
-                m.pc = m.pc.map(|x| x + 1);
+                m.pc += 1;
                 cont.push(m);
             }
             Instruction::CallDataSize => {
                 m.stack.push(m.env.call_data_size.clone());
-                m.pc = m.pc.map(|x| x + 1);
+                m.pc += 1;
                 cont.push(m);
             }
             Instruction::Pop => {
                 m.stack.pop();
-                m.pc = m.pc.map(|x| x + 1);
+                m.pc += 1;
+                cont.push(m);
+            }
+            Instruction::Revert => {
+                let offset = m.stack.pop().unwrap();
+                let length = m.stack.pop().unwrap();
+                m.env.revert_offset = Some(offset);
+                m.env.revert_length = Some(length);
+                m.halt = true;
                 cont.push(m);
             }
             Instruction::Lit(x) => {
@@ -177,7 +192,7 @@ impl Instruction {
 
                 m.constraints.push_back(op._eq(w.clone()));
 
-                m.pc = m.pc.map(|x| x + 1);
+                m.pc += 1;
 
                 cont.push(m);
             }

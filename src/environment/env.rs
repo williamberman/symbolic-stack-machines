@@ -6,6 +6,8 @@ use super::record::EnvRecord;
 pub struct Env {
     pub call_value: Word,
     pub call_data_size: Word,
+    pub revert_offset: Option<Word>,
+    pub revert_length: Option<Word>
 }
 
 impl Env {

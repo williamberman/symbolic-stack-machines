@@ -12,9 +12,10 @@ pub struct Machine {
     pub stack: Stack,
     pub mem: Memory,
     pub env: Env,
-    pub pc: Option<usize>,
+    pub pc: usize,
     pub pgm: Rc<Vec<Instruction>>,
     pub constraints: Vector<Constraint>,
+    pub halt: bool
 }
 
 impl Default for Machine {
@@ -23,9 +24,10 @@ impl Default for Machine {
             stack: Default::default(),
             mem: Default::default(),
             env: Default::default(),
-            pc: Some(0),
+            pc: 0,
             pgm: Default::default(),
             constraints: Default::default(),
+            halt: false,
         }
     }
 }
@@ -46,7 +48,7 @@ impl Machine {
     pub fn run(self) -> Machine {
         let mut x = self;
 
-        while x.can_continue() {
+        while !x.halt {
             x = x.step();
         }
 
@@ -62,7 +64,7 @@ impl Machine {
         loop {
             let start_branch = trace_tree.pop();
             if let Some(mach) = start_branch {
-                if mach.can_continue() {
+                if !mach.halt {
                     let new_machines = mach.step_sym();
                     new_machines.into_iter().for_each(|m| {
                         if m.constraints.is_empty() {
@@ -86,24 +88,15 @@ impl Machine {
     }
 
     pub fn step(self) -> Machine {
-        let i = self.pgm.get(self.pc.unwrap()).unwrap().clone();
+        let i = self.pgm.get(self.pc).unwrap().clone();
 
         // Assume only one is returned
         i.exec(self).pop().unwrap()
     }
 
     pub fn step_sym(self) -> Vec<Self> {
-        let pc = self.pc.unwrap();
-
-        let i = self.pgm.get(pc).unwrap().clone();
+        let i = self.pgm.get(self.pc).unwrap().clone();
 
         i.exec(self)
-    }
-
-    pub fn can_continue(&self) -> bool {
-        match self.pc {
-            Some(pc) => pc < self.pgm.len(),
-            None => false,
-        }
     }
 }

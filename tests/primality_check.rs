@@ -19,5 +19,5 @@ static BYTECODE: &str = "608060405234801561001057600080fd5b506004361061002b57600
 pub fn test_primality_check() {
     let pgm = parse_bytecode(BYTECODE);
     let m = Machine::new(pgm);
-    m.run_sym();
+    let res = m.run_sym();
 }
