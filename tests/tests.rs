@@ -206,5 +206,4 @@ fn test_symbolic_multiple_machines_filtered() {
     assert_eq!(sym_results.leaves.len(), 1);
 
     assert_eq!(sym_results.leaves.get(0).unwrap().stack.peek().unwrap(), &Word::from(200));
-
 }
