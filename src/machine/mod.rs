@@ -1,9 +1,7 @@
-use crate::{
-    environment::Env,
-    instructions::{Constraint, Instruction},
-    memory::Memory,
-    stack::Stack,
-};
+use im::Vector;
+use primitive_types::U256;
+
+use crate::{environment::Env, instructions::Instruction, memory::Memory, stack::Stack, val::{Constraint, word::Word}};
 
 #[derive(Clone)]
 pub struct Machine {
@@ -12,7 +10,7 @@ pub struct Machine {
     pub env: Env,
     pub pc: Option<usize>,
     pub pgm: Vec<Instruction>,
-    pub constraints: Vec<Constraint>,
+    pub constraints: Vector<Constraint<U256>>,
 }
 
 impl Machine {

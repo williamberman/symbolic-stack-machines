@@ -1,3 +1,4 @@
+use im::Vector;
 use symbolic_stack_machines::{
     environment::Env,
     instructions::{add, push1, sub, lit},
@@ -31,7 +32,7 @@ fn test_simple() {
         env,
         pc,
         pgm,
-        constraints: vec![],
+        constraints: Vector::new(),
     };
 
     let res = machine.run().stack.peek().unwrap().clone();

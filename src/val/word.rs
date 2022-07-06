@@ -43,14 +43,6 @@ impl Into<[Instruction; 32]> for Word {
 }
 
 impl Word {
-    pub fn _eq(&self, other: &Self) -> Self {
-        if self == other {
-            Self::true_word()
-        } else {
-            Self::false_word()
-        }
-    }
-
     pub fn ite(&self, then: Self, xelse: Self) -> Self {
         if *self == Self::true_word() {
             then
@@ -112,9 +104,8 @@ impl Word {
         Self::from(val).into()
     }
 }
-
 mod tests {
-    use super::Word;
+    use crate::val::word::Word;
 
     static BS: [u8; 51] = [
         0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,

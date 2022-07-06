@@ -1,7 +1,6 @@
-use crate::{machine::Machine, val::word::Word};
+use primitive_types::U256;
 
-#[derive(Clone)]
-pub struct Constraint {}
+use crate::{machine::Machine, val::word::Word};
 
 #[derive(Clone, Debug)]
 pub enum Instruction {
@@ -60,7 +59,8 @@ impl Instruction {
             Instruction::IsZero => {
                 let op = m.stack.pop().unwrap();
 
-                m.stack.push(op._eq(&Word::zero()).ite(Word::one(), Word::zero()));
+                m.stack
+                    .push(op._eq(Word::zero()).ite(Word::one(), Word::zero()));
 
                 m.pc = m.pc.map(|x| x + 1);
 
@@ -78,17 +78,36 @@ impl Instruction {
                 cont.push(m);
             }
             Instruction::JumpI => {
-                let dest = m.stack.pop().unwrap();
+                let dest = m.stack.pop().unwrap().concrete();
                 let cond = m.stack.pop().unwrap();
 
-                if cond != Word::zero() {
-                    let x = Into::<usize>::into(dest);
-                    m.pc = Some(x);
-                } else {
-                    m.pc = m.pc.map(|x| x + 1);
-                }
+                match cond {
+                    Word::C(cond) => {
+                        if cond != U256::zero() {
+                            m.pc = Some(dest.as_usize());
+                        } else {
+                            m.pc = m.pc.map(|x| x + 1);
+                        }
 
-                cont.push(m);
+                        cont.push(m);
+                    }
+                    cond => {
+                        let mut falls_through = m.clone();
+                        let mut takes_target = m;
+
+                        let falls_through_cond = cond._eq(Word::zero());
+                        let takes_target_cond = !falls_through_cond.clone();
+
+                        falls_through.constraints.push_back(falls_through_cond);
+                        takes_target.constraints.push_back(takes_target_cond);
+
+                        falls_through.pc = falls_through.pc.map(|x| x + 1);
+                        takes_target.pc = Some(dest.as_usize());
+
+                        cont.push(falls_through);
+                        cont.push(takes_target);
+                    }
+                }
             }
             Instruction::MLoad => {
                 let mem_idx = m.stack.pop().unwrap();
@@ -119,7 +138,7 @@ impl Instruction {
     }
 
     pub fn as_bytes(pgm: Vec<Instruction>) -> Vec<u8> {
-        pgm.into_iter().map(|x| { x.into() }).collect()
+        pgm.into_iter().map(|x| x.into()).collect()
     }
 }
 
@@ -139,6 +158,9 @@ pub fn lit(b: u8) -> Instruction {
     Instruction::Lit(b)
 }
 
-pub fn lit_32<T>(val: T) -> [Instruction; 32] where Word: From<T> {
+pub fn lit_32<T>(val: T) -> [Instruction; 32]
+where
+    Word: From<T>,
+{
     Word::constant_instruction(val)
 }
