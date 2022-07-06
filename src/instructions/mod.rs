@@ -1,3 +1,4 @@
+mod convert;
 use primitive_types::U256;
 
 use crate::{
@@ -18,39 +19,6 @@ pub enum Instruction {
     MStore,
     Lit(Byte),
     Assert(Word),
-}
-
-impl Into<u8> for Instruction {
-    fn into(self) -> u8 {
-        match self {
-            Instruction::Stop => 0x00,
-            Instruction::Add => 0x01,
-            Instruction::Sub => 0x03,
-            Instruction::IsZero => 0x15,
-            Instruction::MLoad => 0x51,
-            Instruction::MStore => 0x52,
-            Instruction::Jump => 0x56,
-            Instruction::JumpI => 0x57,
-            Instruction::Push(n) => 0x60 + n - 1,
-            Instruction::Lit(x) => {
-                match x {
-                    Byte::C(x) => x,
-                    // 0xfe is invalid opcode
-                    _ => 0xfe,
-                }
-            }
-            Instruction::Assert(_) => 0xfe,
-        }
-    }
-}
-
-impl Into<Byte> for Instruction {
-    fn into(self) -> Byte {
-        match self {
-            Instruction::Lit(x) => x,
-            x => Byte::C(x.into()),
-        }
-    }
 }
 
 impl Instruction {
