@@ -76,7 +76,7 @@ impl Instruction {
                 cont.push(m);
             }
             Instruction::Dup(n) => {
-                let val = m.stack.peek_n(*n as usize).unwrap().clone();
+                let val = m.stack.peek_n(*n as usize - 1).unwrap().clone();
                 m.stack.push(val);
                 m.pc = m.pc.map(|x| x + 1);
                 cont.push(m);
