@@ -1,6 +1,6 @@
 use super::word::Word;
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug, Hash)]
 pub enum Constraint {
     Eq(Box<Word>, Box<Word>),
     Neq(Box<Constraint>),

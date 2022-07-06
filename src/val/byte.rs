@@ -1,4 +1,4 @@
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug, Hash)]
 pub enum Byte {
     C(u8),
     S(String)
@@ -17,5 +17,11 @@ impl Into<u8> for Byte {
 impl From<u8> for Byte {
     fn from(x: u8) -> Self {
         Byte::C(x)
+    }
+}
+
+impl From<&str> for Byte {
+    fn from(x: &str) -> Self {
+        Byte::S(x.into())
     }
 }

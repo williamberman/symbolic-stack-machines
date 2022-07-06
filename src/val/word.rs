@@ -5,7 +5,7 @@ use crate::instructions::Instruction;
 
 use super::{byte::Byte, constraint::Constraint};
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug, Hash)]
 pub enum Word {
     C(U256),
     S(String),

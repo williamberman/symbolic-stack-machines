@@ -1,11 +1,14 @@
+use std::collections::HashMap;
+
 use im::Vector;
 use symbolic_stack_machines::{
     environment::Env,
-    instructions::{add, iszero, jumpi, lit, lit_sym, push1, stop, sub},
+    instructions::{add, iszero, jumpi, lit, push1, stop, sub},
     machine::Machine,
     memory::Memory,
     stack::Stack,
     val::{byte::Byte, word::Word},
+    z3::{solve_z3, SolveResults},
 };
 
 #[test]
@@ -46,7 +49,7 @@ fn test_simple() {
 fn test_symbolic_single_machine() {
     let pgm = vec![
         push1(),
-        lit_sym("x".into()),
+        lit("x"),
         push1(),
         lit(2),
         push1(),
@@ -86,7 +89,7 @@ fn test_symbolic_multiple_machines() {
         push1(),
         lit(2),
         push1(),
-        lit_sym("x".into()),
+        lit("x"),
         add(),
         sub(),
         push1(),
@@ -123,15 +126,27 @@ fn test_symbolic_multiple_machines() {
     let take_jump = ms.get(0).unwrap();
     let no_take_jump = ms.get(1).unwrap();
 
-    assert_eq!(
-        take_jump.stack.peek().unwrap(),
-        &Word::from(200)
-    );
+    assert_eq!(take_jump.stack.peek().unwrap(), &Word::from(200));
+
+    assert_eq!(no_take_jump.stack.peek().unwrap(), &Word::from(100));
+
+    let take_jump_sol = solve_z3(&take_jump.constraints, vec![], vec!["x".into()]).unwrap();
 
     assert_eq!(
-        no_take_jump.stack.peek().unwrap(),
-        &Word::from(100)
+        take_jump_sol,
+        SolveResults {
+            words: HashMap::new(),
+            bytes: HashMap::from([("x".into(), 3)])
+        }
     );
 
-    // TODO solve constraints
+    let no_take_jump_sol = solve_z3(&no_take_jump.constraints, vec![], vec!["x".into()]).unwrap();
+
+    assert_eq!(
+        no_take_jump_sol,
+        SolveResults {
+            words: HashMap::new(),
+            bytes: HashMap::from([("x".into(), 252)])
+        }
+    );
 }

@@ -183,12 +183,8 @@ pub fn sub() -> Instruction {
     Instruction::Sub
 }
 
-pub fn lit(b: u8) -> Instruction {
-    Instruction::Lit(Byte::C(b))
-}
-
-pub fn lit_sym(s: String) -> Instruction {
-    Instruction::Lit(Byte::S(s))
+pub fn lit<T: Into<Byte>>(x: T) -> Instruction {
+    Instruction::Lit(x.into())
 }
 
 pub fn lit_32<T>(val: T) -> [Instruction; 32]
