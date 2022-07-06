@@ -7,7 +7,7 @@ use crate::{
     val::constraint::Constraint, z3::solve_z3,
 };
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct Machine {
     pub stack: Stack,
     pub mem: Memory,
@@ -25,19 +25,9 @@ pub struct SymResults {
 
 impl Machine {
     pub fn new(pgm: Vec<Instruction>) -> Self {
-        let env = Env {};
-        let pc = Some(0);
-        let mem = Memory::default();
-        let stack = Stack::default();
-
-        Machine {
-            stack,
-            mem,
-            env,
-            pc,
-            pgm: Rc::new(pgm),
-            constraints: Vector::new(),
-        }
+        let mut m = Self::default();
+        m.pgm = Rc::new(pgm);
+        m
     }
 
     pub fn run(self) -> Machine {

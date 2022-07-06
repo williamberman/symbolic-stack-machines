@@ -15,6 +15,12 @@ pub enum Word {
     Concat([Byte; 32]),
 }
 
+impl Default for Word {
+    fn default() -> Self {
+        Word::zero()
+    }
+}
+
 impl From<u32> for Word {
     fn from(x: u32) -> Self {
         Self::from(U256::from(x))

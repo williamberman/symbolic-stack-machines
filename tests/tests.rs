@@ -1,12 +1,8 @@
 use std::collections::HashMap;
 
-use im::Vector;
 use symbolic_stack_machines::{
-    environment::Env,
     instructions::{add, assert_ins, iszero, jump, jumpi, lit, push1, stop, sub},
     machine::Machine,
-    memory::Memory,
-    stack::Stack,
     val::{byte::Byte, word::Word},
     z3::{solve_z3, SolveResults},
 };

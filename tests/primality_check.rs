@@ -1,4 +1,4 @@
-use symbolic_stack_machines::{instructions::{Instruction, parse_bytecode}, machine::Machine};
+use symbolic_stack_machines::{instructions::parse_bytecode, machine::Machine};
 
 // // SPDX-License-Identifier: UNLICENSED
 // pragma solidity ^0.8.9;

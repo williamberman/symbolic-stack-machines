@@ -10,11 +10,12 @@ pub use convert::parse_bytecode;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Instruction {
+    Stop,
     Add,
     Sub,
     IsZero,
     Push(u8),
-    Stop,
+    CallValue,
     JumpI,
     Jump,
     MLoad,
@@ -140,6 +141,11 @@ impl Instruction {
 
                 m.pc = m.pc.map(|x| x + 1);
 
+                cont.push(m);
+            }
+            Instruction::CallValue => {
+                m.stack.push(m.env.call_value.clone());
+                m.pc = m.pc.map(|x| x + 1);
                 cont.push(m);
             }
             Instruction::Lit(x) => {
