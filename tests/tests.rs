@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use im::Vector;
 use symbolic_stack_machines::{
     environment::Env,
-    instructions::{add, iszero, jumpi, lit, push1, stop, sub, assert_ins, jump},
+    instructions::{add, assert_ins, iszero, jump, jumpi, lit, push1, stop, sub},
     machine::Machine,
     memory::Memory,
     stack::Stack,
@@ -27,18 +27,7 @@ fn test_simple() {
         sub(),
     ];
 
-    let env = Env {};
-    let pc = Some(0);
-    let mem = Memory::default();
-    let stack = Stack::default();
-    let machine = Machine {
-        stack,
-        mem,
-        env,
-        pc,
-        pgm,
-        constraints: Vector::new(),
-    };
+    let machine = Machine::new(pgm);
 
     let res = machine.run().stack.peek().unwrap().clone();
 
@@ -58,18 +47,7 @@ fn test_symbolic_single_machine() {
         sub(),
     ];
 
-    let env = Env {};
-    let pc = Some(0);
-    let mem = Memory::default();
-    let stack = Stack::default();
-    let machine = Machine {
-        stack,
-        mem,
-        env,
-        pc,
-        pgm,
-        constraints: Vector::new(),
-    };
+    let machine = Machine::new(pgm);
 
     let res = machine.run().stack.peek().unwrap().clone();
 
@@ -106,18 +84,7 @@ fn test_symbolic_multiple_machines() {
         lit(200),
     ];
 
-    let env = Env {};
-    let pc = Some(0);
-    let mem = Memory::default();
-    let stack = Stack::default();
-    let machine = Machine {
-        stack,
-        mem,
-        env,
-        pc,
-        pgm,
-        constraints: Vector::new(),
-    };
+    let machine = Machine::new(pgm);
 
     let sym_results = machine.run_sym();
 
@@ -183,26 +150,21 @@ fn test_symbolic_multiple_machines_filtered() {
         assert_ins(200), // 22
     ];
 
-    let env = Env {};
-    let pc = Some(0);
-    let mem = Memory::default();
-    let stack = Stack::default();
-    let machine = Machine {
-        stack,
-        mem,
-        env,
-        pc,
-        pgm,
-        constraints: Vector::new(),
-    };
+    let machine = Machine::new(pgm);
 
     let sym_results = machine.run_sym();
 
     assert_eq!(sym_results.pruned.len(), 1);
 
-    assert_eq!(sym_results.pruned.get(0).unwrap().stack.peek().unwrap(), &Word::from(100));
+    assert_eq!(
+        sym_results.pruned.get(0).unwrap().stack.peek().unwrap(),
+        &Word::from(100)
+    );
 
     assert_eq!(sym_results.leaves.len(), 1);
 
-    assert_eq!(sym_results.leaves.get(0).unwrap().stack.peek().unwrap(), &Word::from(200));
+    assert_eq!(
+        sym_results.leaves.get(0).unwrap().stack.peek().unwrap(),
+        &Word::from(200)
+    );
 }

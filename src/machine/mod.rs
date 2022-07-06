@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use im::Vector;
 
 use crate::{
@@ -11,7 +13,7 @@ pub struct Machine {
     pub mem: Memory,
     pub env: Env,
     pub pc: Option<usize>,
-    pub pgm: Vec<Instruction>,
+    pub pgm: Rc<Vec<Instruction>>,
     pub constraints: Vector<Constraint>,
 }
 
@@ -22,6 +24,22 @@ pub struct SymResults {
 }
 
 impl Machine {
+    pub fn new(pgm: Vec<Instruction>) -> Self {
+        let env = Env {};
+        let pc = Some(0);
+        let mem = Memory::default();
+        let stack = Stack::default();
+
+        Machine {
+            stack,
+            mem,
+            env,
+            pc,
+            pgm: Rc::new(pgm),
+            constraints: Vector::new(),
+        }
+    }
+
     pub fn run(self) -> Machine {
         let mut x = self;
 

@@ -54,3 +54,11 @@ impl From<u8> for Instruction {
         }
     }
 }
+
+pub fn parse_bytecode(bytecode: &str) -> Vec<Instruction> {
+    hex::decode(bytecode)
+        .unwrap()
+        .into_iter()
+        .map(|x| Instruction::from(x))
+        .collect()
+}
