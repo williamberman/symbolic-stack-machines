@@ -48,6 +48,10 @@ impl Memory {
         Word::write_bytes(&mut self.inner, xidx, val.into());
     }
 
+    pub fn inner(&self) -> &Vector<Byte> {
+        &self.inner
+    }
+
     fn read_byte_inner(&self, idx: usize) -> Option<&Byte> {
         self.inner.get(idx)
     }

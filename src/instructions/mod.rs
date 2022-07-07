@@ -229,10 +229,10 @@ impl Instruction {
                 cont.push(m);
             }
             Instruction::MStore => {
-                let idx = m.stack.pop().unwrap();
+                let offset = m.stack.pop().unwrap();
                 let val = m.stack.pop().unwrap();
 
-                m.mem.write_word(idx, val);
+                m.mem.write_word(offset, val);
 
                 m.pc += 1;
                 cont.push(m);
@@ -328,6 +328,10 @@ pub fn jumpi() -> Instruction {
 
 pub fn stop() -> Instruction {
     Instruction::Stop
+}
+
+pub fn mstore() -> Instruction {
+    Instruction::MStore
 }
 
 pub fn assert_ins<T: Into<Word>>(x: T) -> Instruction {

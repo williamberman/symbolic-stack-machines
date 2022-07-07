@@ -4,14 +4,19 @@ use std::rc::Rc;
 use im::Vector;
 
 use crate::{
-    calldata::Calldata, instructions::Instruction, memory::Memory, stack::Stack,
-    val::{constraint::Constraint, word::Word, byte::Byte}, z3::solve_z3,
+    calldata::Calldata,
+    instructions::Instruction,
+    memory::Memory,
+    stack::Stack,
+    val::{byte::Byte, constraint::Constraint, word::Word},
+    z3::solve_z3,
 };
 
 use self::revert::Revert;
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Machine {
+    pub id: usize,
     pub stack: Stack,
     pub mem: Memory,
     pub pc: usize,
@@ -23,9 +28,27 @@ pub struct Machine {
     pub revert: Option<Revert>,
 }
 
+impl Clone for Machine {
+    fn clone(&self) -> Self {
+        Self {
+            id: self.id + 1,
+            stack: self.stack.clone(),
+            mem: self.mem.clone(),
+            pc: self.pc.clone(),
+            pgm: self.pgm.clone(),
+            calldata: self.calldata.clone(),
+            constraints: self.constraints.clone(),
+            halt: self.halt.clone(),
+            call_value: self.call_value.clone(),
+            revert: self.revert.clone(),
+        }
+    }
+}
+
 impl Default for Machine {
     fn default() -> Self {
         Self {
+            id: Default::default(),
             stack: Default::default(),
             mem: Default::default(),
             pc: 0,
@@ -34,7 +57,7 @@ impl Default for Machine {
             constraints: Default::default(),
             halt: false,
             call_value: Default::default(),
-            revert: Default::default()
+            revert: Default::default(),
         }
     }
 }
@@ -108,9 +131,9 @@ impl Machine {
     }
 
     pub fn revert_bytes(&self) -> Option<Vec<Byte>> {
-        self.revert.clone().map(|revert| {
-            self.mem.read_bytes(revert.offset, revert.length)
-        })
+        self.revert
+            .clone()
+            .map(|revert| self.mem.read_bytes(revert.offset, revert.length))
     }
 
     pub fn revert_string(&self) -> Option<String> {
