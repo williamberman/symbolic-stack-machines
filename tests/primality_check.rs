@@ -4,7 +4,7 @@ use im::Vector;
 use symbolic_stack_machines::{
     instructions::parse_bytecode,
     machine::{mem_ptr::MemPtr, Machine},
-    val::word::Word,
+    val::{byte::Byte, word::Word},
 };
 
 // // SPDX-License-Identifier: UNLICENSED
@@ -162,7 +162,10 @@ pub fn test_primality_check_arguments_concrete_assert_pass() {
 
     let returned = res.leaves.get(0).unwrap();
 
-    assert_eq!(returned.return_string().unwrap(), "0000000000000000000000000000000000000000000000000000000000000539");
+    assert_eq!(
+        returned.return_string().unwrap(),
+        "0000000000000000000000000000000000000000000000000000000000000539"
+    );
 }
 
 #[test]
@@ -202,9 +205,34 @@ pub fn test_primality_check_arguments_concrete_assert_fail() {
         }
     );
 
-    assert_eq!(reverted.revert_string().unwrap(), "4e487b710000000000000000000000000000000000000000000000000000000000000001");
+    assert_eq!(
+        reverted.revert_string().unwrap(),
+        "4e487b710000000000000000000000000000000000000000000000000000000000000001"
+    );
 }
 
+#[test]
 pub fn test_primality_check_arguments_symbolic() {
+    let pgm = parse_bytecode(BYTECODE);
+    let mut m = Machine::new(pgm);
+
+    let mut calldata: Vec<Byte> = Vec::from(FUNCTION_SELECTOR_ARR)
+        .into_iter()
+        .map(|x| x.into())
+        .collect();
+    let args = (5_u8..69).map(|idx| {
+        let mut s: String = "calldata".into();
+        s.push_str(&idx.to_string());
+        Byte::S(s)
+    });
+    calldata.extend(args);
+
+    m.calldata = Rc::new(calldata.into());
+
+    let res = m.run_sym();
+
+    dbg!(res.leaves.len());
+    dbg!(res.pruned.len());
+
     todo!()
 }
