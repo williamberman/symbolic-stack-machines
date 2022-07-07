@@ -12,7 +12,7 @@ use crate::val::{byte::Byte, constraint::Constraint, word::Word};
 static WORD_BITVEC_SIZE: u32 = 256;
 static BYTE_BITVEC_SIZE: u32 = 8;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SolveResults {
     pub words: HashMap<Word, U256>,
     pub bytes: HashMap<Byte, u8>,

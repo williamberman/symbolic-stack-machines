@@ -15,7 +15,7 @@ use crate::{
     memory::Memory,
     stack::Stack,
     val::{byte::Byte, constraint::Constraint, word::Word},
-    z3::solve_z3,
+    z3::{solve_z3, SolveResults},
 };
 
 use self::mem_ptr::MemPtr;
@@ -36,6 +36,7 @@ pub struct Machine {
 
     pub constraint_solve: bool,
     pub ctr: Arc<AtomicUsize>,
+    pub solve_results: Option<SolveResults>,
 }
 
 impl Clone for Machine {
@@ -57,6 +58,7 @@ impl Clone for Machine {
 
             constraint_solve: self.constraint_solve,
             ctr: self.ctr.clone(),
+            solve_results: self.solve_results.clone(),
         }
     }
 }
@@ -78,6 +80,7 @@ impl Default for Machine {
 
             constraint_solve: true,
             ctr: Arc::new(AtomicUsize::new(1)),
+            solve_results: Default::default(),
         }
     }
 }
@@ -98,10 +101,11 @@ impl SymResults {
         }
     }
 
-    fn push(&mut self, m: Machine, constraint_solve: bool) {
+    fn push(&mut self, mut m: Machine, constraint_solve: bool) {
         if constraint_solve && !m.constraints.is_empty() {
-            match solve_z3(&m.constraints, vec![], vec![]) {
-                Some(_) => {
+            match solve_z3(&m.constraints, vec![], m.calldata.inner().clone()) {
+                Some(sr) => {
+                    m.solve_results = Some(sr);
                     self.push_inner(m);
                 }
                 None => self.pruned.push(m),

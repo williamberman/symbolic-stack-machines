@@ -39,6 +39,10 @@ impl Calldata {
 
         calldata.into()
     }
+
+    pub fn inner(&self) -> &Vec<Byte> {
+        &self.inner
+    }
 }
 
 impl From<Vec<Byte>> for Calldata {
