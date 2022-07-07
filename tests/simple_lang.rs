@@ -87,7 +87,7 @@ fn test_symbolic_multiple_machines() {
 
     let sym_results = machine.run_sym();
 
-    assert_eq!(sym_results.pruned, vec![]);
+    assert_eq!(sym_results.pruned.len(), 0);
 
     let ms = sym_results.leaves;
 

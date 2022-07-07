@@ -1,5 +1,5 @@
 pub mod mem_ptr;
-use std::rc::Rc;
+use std::{rc::Rc, sync::{Arc, atomic::{AtomicUsize, Ordering}}};
 
 use im::Vector;
 
@@ -14,7 +14,7 @@ use crate::{
 
 use self::mem_ptr::MemPtr;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug)]
 pub struct Machine {
     pub id: usize,
     pub stack: Stack,
@@ -27,12 +27,17 @@ pub struct Machine {
     pub call_value: Word,
     pub return_ptr: Option<MemPtr>,
     pub revert_ptr: Option<MemPtr>,
+
+    pub constraint_solve: bool,
+    pub ctr: Arc<AtomicUsize>
 }
 
 impl Clone for Machine {
     fn clone(&self) -> Self {
+        let new_id = self.ctr.fetch_add(1, Ordering::SeqCst);
+
         Self {
-            id: self.id + 1,
+            id: new_id,
             stack: self.stack.clone(),
             mem: self.mem.clone(),
             pc: self.pc.clone(),
@@ -43,6 +48,9 @@ impl Clone for Machine {
             call_value: self.call_value.clone(),
             return_ptr: self.return_ptr.clone(),
             revert_ptr: self.revert_ptr.clone(),
+
+            constraint_solve: self.constraint_solve,
+            ctr: self.ctr.clone(),
         }
     }
 }
@@ -61,6 +69,9 @@ impl Default for Machine {
             call_value: Default::default(),
             return_ptr: Default::default(),
             revert_ptr: Default::default(),
+
+            constraint_solve: true,
+            ctr: Arc::new(AtomicUsize::new(1)),
         }
     }
 }
@@ -103,15 +114,23 @@ impl Machine {
                         if m.constraints.is_empty() {
                             queue.push(m)
                         } else {
-                            match solve_z3(&m.constraints, vec![], vec![]) {
-                                Some(_) => {
-                                    if m.halt {
-                                        leaves.push(m)
-                                    } else {
-                                        queue.push(m)
+                            if m.constraint_solve {
+                                match solve_z3(&m.constraints, vec![], vec![]) {
+                                    Some(_) => {
+                                        if m.halt {
+                                            leaves.push(m)
+                                        } else {
+                                            queue.push(m)
+                                        }
                                     }
-                                },
-                                None => pruned.push(m),
+                                    None => pruned.push(m),
+                                }
+                            } else {
+                                if m.halt {
+                                    leaves.push(m)
+                                } else {
+                                    queue.push(m)
+                                }
                             }
                         }
                     });
@@ -140,27 +159,19 @@ impl Machine {
     }
 
     pub fn revert_bytes(&self) -> Option<Vec<Byte>> {
-        self.revert_ptr
-            .clone()
-            .map(|ptr| self.mem_ptr_bytes(ptr))
+        self.revert_ptr.clone().map(|ptr| self.mem_ptr_bytes(ptr))
     }
 
     pub fn revert_string(&self) -> Option<String> {
-        self.revert_ptr
-            .clone()
-            .map(|ptr| self.mem_ptr_string(ptr))
+        self.revert_ptr.clone().map(|ptr| self.mem_ptr_string(ptr))
     }
 
     pub fn return_bytes(&self) -> Option<Vec<Byte>> {
-        self.return_ptr
-            .clone()
-            .map(|ptr| self.mem_ptr_bytes(ptr))
+        self.return_ptr.clone().map(|ptr| self.mem_ptr_bytes(ptr))
     }
 
     pub fn return_string(&self) -> Option<String> {
-        self.return_ptr
-            .clone()
-            .map(|ptr| self.mem_ptr_string(ptr))
+        self.return_ptr.clone().map(|ptr| self.mem_ptr_string(ptr))
     }
 
     fn mem_ptr_bytes(&self, ptr: MemPtr) -> Vec<Byte> {
