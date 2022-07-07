@@ -15,10 +15,14 @@ pub enum Word {
     C(U256),
     S(String),
     Add(Box<Word>, Box<Word>),
+    Mul(Box<Word>, Box<Word>),
     Sub(Box<Word>, Box<Word>),
+    Div(Box<Word>, Box<Word>),
     Lt(Box<Word>, Box<Word>),
+    Gt(Box<Word>, Box<Word>),
     Slt(Box<Word>, Box<Word>),
     Shr(Box<Word>, Box<Word>),
+    BitAnd(Box<Word>, Box<Word>),
     Ite(Box<Constraint>, Box<Word>, Box<Word>),
     Concat([Byte; 32]),
 }
@@ -215,6 +219,19 @@ impl Word {
         }
     }
 
+    pub fn _gt(self, other: Word) -> Word {
+        match (self, other) {
+            (Word::C(l), Word::C(r)) => {
+                if l > r {
+                    Word::one()
+                } else {
+                    Word::zero()
+                }
+            }
+            (l, r) => Word::Gt(Box::new(l), Box::new(r)),
+        }
+    }
+
     pub fn _slt(self, other: Word) -> Word {
         match (self, other) {
             (Word::C(l), Word::C(r)) => {
@@ -241,6 +258,19 @@ impl std::ops::Add for Word {
         match (self, rhs) {
             (Self::C(l), Self::C(r)) => Self::C(l + r),
             (l, r) => Self::Add(Box::new(l), Box::new(r)),
+        }
+    }
+}
+
+impl std::ops::Mul for Word {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        match (self, rhs) {
+            (Self::C(l), Self::C(r)) => {
+                l.overflowing_mul(r).0.into()
+            },
+            (l, r) => Word::Mul(Box::new(l), Box::new(r))
         }
     }
 }
@@ -272,6 +302,36 @@ impl std::ops::Shr for Word {
                 w.into()
             }
             (value, shift) => Self::Shr(Box::new(value), Box::new(shift)),
+        }
+    }
+}
+
+impl std::ops::Div for Word {
+    type Output = Self;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        match (self, rhs) {
+            (Word::C(l), Word::C(r)) => {
+                let rv = if r == U256::zero() {
+                    U256::zero()
+                } else {
+                    l / r
+                };
+
+                rv.into()
+            },
+            (l, r) => Word::Div(Box::new(l), Box::new(r))
+        }
+    }
+}
+
+impl std::ops::BitAnd for Word {
+    type Output = Self;
+
+    fn bitand(self, rhs: Self) -> Self::Output {
+        match (self, rhs) {
+            (Word::C(l), Word::C(r)) => (l & r).into(),
+            (l, r) => Word::BitAnd(Box::new(l), Box::new(r))
         }
     }
 }

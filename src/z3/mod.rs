@@ -81,10 +81,16 @@ pub fn make_bitvec_from_word<'ctx>(ctx: &'ctx Context, w: &Word) -> BV<'ctx> {
         Word::C(x) => BV::from_u64(ctx, x.as_u64(), WORD_BITVEC_SIZE),
         Word::S(x) => BV::new_const(&ctx, x.clone(), WORD_BITVEC_SIZE),
         Word::Add(l, r) => make_bitvec_from_word(ctx, l) + make_bitvec_from_word(ctx, r),
+        Word::Mul(l, r) => make_bitvec_from_word(ctx, l).bvmul(&make_bitvec_from_word(ctx, r)),
         Word::Sub(l, r) => make_bitvec_from_word(ctx, l) - make_bitvec_from_word(ctx, r),
+        Word::Div(l, r) => make_bitvec_from_word(ctx, l).bvudiv(&make_bitvec_from_word(ctx, r)),
         Word::Lt(l, r) => bool_to_bitvec(
             ctx,
             make_bitvec_from_word(ctx, l).bvult(&make_bitvec_from_word(ctx, r)),
+        ),
+        Word::Gt(l, r) => bool_to_bitvec(
+            ctx,
+            make_bitvec_from_word(ctx, l).bvugt(&make_bitvec_from_word(ctx, r)),
         ),
         Word::Slt(l, r) => bool_to_bitvec(
             ctx,
@@ -93,6 +99,7 @@ pub fn make_bitvec_from_word<'ctx>(ctx: &'ctx Context, w: &Word) -> BV<'ctx> {
         Word::Shr(value, shift) => {
             make_bitvec_from_word(ctx, value).bvlshr(&make_bitvec_from_word(ctx, shift))
         }
+        Word::BitAnd(l, r) => make_bitvec_from_word(ctx, l).bvand(&make_bitvec_from_word(ctx, r)),
         Word::Ite(q, then, xelse) => make_constraint(ctx, q).ite(
             &make_bitvec_from_word(ctx, then),
             &make_bitvec_from_word(ctx, xelse),

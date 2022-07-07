@@ -12,11 +12,15 @@ pub use convert::parse_bytecode;
 pub enum Instruction {
     Stop,
     Add,
+    Mul,
     Sub,
+    Div,
     Lt,
+    Gt,
     Slt,
     Eq,
     IsZero,
+    And,
     Shr,
     CallValue,
     CallDataLoad,
@@ -51,7 +55,15 @@ impl Instruction {
                 m.stack.push(op_1 + op_2);
 
                 m.pc += 1;
+                cont.push(m);
+            }
+            Instruction::Mul => {
+                let op_1 = m.stack.pop().unwrap();
+                let op_2 = m.stack.pop().unwrap();
 
+                m.stack.push(op_1 * op_2);
+
+                m.pc += 1;
                 cont.push(m);
             }
             Instruction::Sub => {
@@ -63,11 +75,28 @@ impl Instruction {
                 m.pc += 1;
                 cont.push(m);
             }
+            Instruction::Div => {
+                let op_1 = m.stack.pop().unwrap();
+                let op_2 = m.stack.pop().unwrap();
+
+                m.stack.push(op_1 / op_2);
+
+                m.pc += 1;
+                cont.push(m);
+            }
             Instruction::Lt => {
                 let op_1 = m.stack.pop().unwrap();
                 let op_2 = m.stack.pop().unwrap();
 
                 m.stack.push(op_1._lt(op_2));
+                m.pc += 1;
+                cont.push(m);
+            }
+            Instruction::Gt => {
+                let op_1 = m.stack.pop().unwrap();
+                let op_2 = m.stack.pop().unwrap();
+
+                m.stack.push(op_1._gt(op_2));
                 m.pc += 1;
                 cont.push(m);
             }
@@ -103,8 +132,17 @@ impl Instruction {
                 };
 
                 m.stack.push(to_push);
-                m.pc += 1;
 
+                m.pc += 1;
+                cont.push(m);
+            }
+            Instruction::And => {
+                let op_1 = m.stack.pop().unwrap();
+                let op_2 = m.stack.pop().unwrap();
+
+                m.stack.push(op_1 & op_2);
+
+                m.pc += 1;
                 cont.push(m);
             }
             Instruction::Shr => {
