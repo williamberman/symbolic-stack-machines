@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::val::{
     byte::Byte,
     word::{Word, BYTES_IN_WORD},
@@ -43,6 +45,16 @@ impl Calldata {
     pub fn inner(&self) -> &Vec<Byte> {
         &self.inner
     }
+
+    pub fn solve(&self, solutions: &HashMap<Byte, u8>) -> String {
+        let concrete_calldata: Vec<u8> = self
+            .inner
+            .iter()
+            .map(|sym_byte| solutions.get(sym_byte).unwrap().clone())
+            .collect();
+
+        hex::encode(concrete_calldata)
+    }
 }
 
 impl From<Vec<Byte>> for Calldata {
@@ -55,5 +67,17 @@ impl From<Vec<u8>> for Calldata {
     fn from(data: Vec<u8>) -> Self {
         let d: Vec<Byte> = data.into_iter().map(|x| x.into()).collect();
         d.into()
+    }
+}
+
+impl Into<String> for Calldata {
+    fn into(self) -> String {
+        let concrete_calldata: Vec<u8> = self
+            .inner
+            .into_iter()
+            .map(|sym_byte| sym_byte.into())
+            .collect();
+
+        hex::encode(concrete_calldata)
     }
 }

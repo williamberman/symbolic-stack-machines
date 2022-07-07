@@ -101,6 +101,14 @@ impl SymResults {
         }
     }
 
+    pub fn find_reverted(&self, s: String) -> Option<&Machine> {
+        let ss = Some(s);
+        self.leaves.iter().find(|m| {
+            // TODO(will) - should we not have to check solve_results here?
+            m.revert_string() == ss && m.solve_results.is_some()
+        })
+    }
+
     fn push(&mut self, mut m: Machine, constraint_solve: bool) {
         if constraint_solve && !m.constraints.is_empty() {
             match solve_z3(&m.constraints, vec![], m.calldata.inner().clone()) {

@@ -5,35 +5,16 @@ use symbolic_stack_machines::{
     calldata::Calldata,
     instructions::parse_bytecode,
     machine::{mem_ptr::MemPtr, Machine},
+    misc::{
+        PRIMALITY_CHECK_ASSERT_REVERT_STRING, PRIMALITY_CHECK_BYTECODE,
+        PRIMALITY_CHECK_FUNCTION_SELECTOR_ARR, PRIMALITY_CHECK_FUNCTION_SELECTOR_INT,
+    },
     val::word::Word,
 };
 
-// // SPDX-License-Identifier: UNLICENSED
-// pragma solidity ^0.8.9;
-//
-// contract PrimalityCheck {
-//     function factor(uint x, uint y) public pure returns(uint) {
-//       require(1 < x && x < 973013 && 1 < y && y < 973013);
-//       assert(x*y != 973013);
-//       return 1337;
-//     }
-// }
-
-// solc --bin-runtime -o . --overwrite PrimalityCheck.sol
-
-// cat PrimalityCheck.bin-runtime
-static BYTECODE: &str = "608060405234801561001057600080fd5b506004361061002b5760003560e01c8063d5a2424914610030575b600080fd5b61004a600480360381019061004591906100fc565b610060565b604051610057919061014b565b60405180910390f35b60008260011080156100745750620ed8d583105b80156100805750816001105b801561008e5750620ed8d582105b61009757600080fd5b620ed8d582846100a79190610195565b14156100b6576100b56101ef565b5b610539905092915050565b600080fd5b6000819050919050565b6100d9816100c6565b81146100e457600080fd5b50565b6000813590506100f6816100d0565b92915050565b60008060408385031215610113576101126100c1565b5b6000610121858286016100e7565b9250506020610132858286016100e7565b9150509250929050565b610145816100c6565b82525050565b6000602082019050610160600083018461013c565b92915050565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052601160045260246000fd5b60006101a0826100c6565b91506101ab836100c6565b9250817fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff04831182151516156101e4576101e3610166565b5b828202905092915050565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052600160045260246000fdfea2646970667358221220b6b1339bfb75ad64c1352af183f05265b8d840c0225fa355a7848684a4cfbc4b64736f6c634300080c0033";
-
-static FUNCTION_SELECTOR_INT: u32 = 3584180809;
-
-static FUNCTION_SELECTOR_ARR: [u8; 4] = [0xd5_u8, 0xa2, 0x42, 0x49];
-
-static ASSERT_REVERT_STRING: &str =
-    "4e487b710000000000000000000000000000000000000000000000000000000000000001";
-
 #[test]
 pub fn test_primality_check_empty_calldata() {
-    let pgm = parse_bytecode(BYTECODE);
+    let pgm = parse_bytecode(PRIMALITY_CHECK_BYTECODE);
     let m = Machine::new(pgm);
     let res = m.run_sym();
     assert_eq!(res.leaves.len(), 1);
@@ -52,7 +33,7 @@ pub fn test_primality_check_empty_calldata() {
 
 #[test]
 pub fn test_primality_check_wrong_calldata() {
-    let pgm = parse_bytecode(BYTECODE);
+    let pgm = parse_bytecode(PRIMALITY_CHECK_BYTECODE);
     let mut m = Machine::new(pgm);
 
     m.calldata = Rc::new(vec![0_u8, 0, 0, 0].into());
@@ -65,7 +46,7 @@ pub fn test_primality_check_wrong_calldata() {
     // Attempts to takes jump to function but has wrong calldata
     // so is unsat
     let pruned = res.pruned.get(0).unwrap();
-    let expected_constraint = Word::C(FUNCTION_SELECTOR_INT.into())
+    let expected_constraint = Word::C(PRIMALITY_CHECK_FUNCTION_SELECTOR_INT.into())
         ._eq_word(Word::zero())
         ._eq(Word::zero())
         .not();
@@ -84,10 +65,10 @@ pub fn test_primality_check_wrong_calldata() {
 
 #[test]
 pub fn test_primality_check_zero_arguments() {
-    let pgm = parse_bytecode(BYTECODE);
+    let pgm = parse_bytecode(PRIMALITY_CHECK_BYTECODE);
     let mut m = Machine::new(pgm);
 
-    m.calldata = Rc::new(Vec::from(FUNCTION_SELECTOR_ARR).into());
+    m.calldata = Rc::new(Vec::from(PRIMALITY_CHECK_FUNCTION_SELECTOR_ARR).into());
 
     let res = m.run_sym();
 
@@ -96,8 +77,8 @@ pub fn test_primality_check_zero_arguments() {
 
     // Pruned path where function selector in calldata not correct
     let pruned = res.pruned.get(0).unwrap();
-    let expected_constraint = Word::C(FUNCTION_SELECTOR_INT.into())
-        ._eq_word(FUNCTION_SELECTOR_INT.into())
+    let expected_constraint = Word::C(PRIMALITY_CHECK_FUNCTION_SELECTOR_INT.into())
+        ._eq_word(PRIMALITY_CHECK_FUNCTION_SELECTOR_INT.into())
         ._eq(Word::zero());
     assert_eq!(pruned.constraints, Vector::from(vec![expected_constraint]));
 
@@ -107,10 +88,10 @@ pub fn test_primality_check_zero_arguments() {
 
 #[test]
 pub fn test_primality_check_arguments_concrete_require_fail_min() {
-    let pgm = parse_bytecode(BYTECODE);
+    let pgm = parse_bytecode(PRIMALITY_CHECK_BYTECODE);
     let mut m = Machine::new(pgm);
 
-    let mut calldata = Vec::from(FUNCTION_SELECTOR_ARR);
+    let mut calldata = Vec::from(PRIMALITY_CHECK_FUNCTION_SELECTOR_ARR);
     calldata.extend([0_u8; 64].into_iter());
 
     m.calldata = Rc::new(calldata.into());
@@ -124,7 +105,7 @@ pub fn test_primality_check_arguments_concrete_require_fail_min() {
 
 #[test]
 pub fn test_primality_check_arguments_concrete_require_fail_max() {
-    let pgm = parse_bytecode(BYTECODE);
+    let pgm = parse_bytecode(PRIMALITY_CHECK_BYTECODE);
     let mut m = Machine::new(pgm);
 
     let mut arg = [0_u8; 32];
@@ -133,7 +114,7 @@ pub fn test_primality_check_arguments_concrete_require_fail_max() {
     arg[30] = 0xD8;
     arg[31] = 0xD5;
 
-    let mut calldata = Vec::from(FUNCTION_SELECTOR_ARR);
+    let mut calldata = Vec::from(PRIMALITY_CHECK_FUNCTION_SELECTOR_ARR);
     calldata.extend(arg.iter());
     calldata.extend(arg.into_iter());
 
@@ -148,13 +129,13 @@ pub fn test_primality_check_arguments_concrete_require_fail_max() {
 
 #[test]
 pub fn test_primality_check_arguments_concrete_assert_pass() {
-    let pgm = parse_bytecode(BYTECODE);
+    let pgm = parse_bytecode(PRIMALITY_CHECK_BYTECODE);
     let mut m = Machine::new(pgm);
 
     let mut arg = [0_u8; 32];
     arg[31] = 0x02;
 
-    let mut calldata = Vec::from(FUNCTION_SELECTOR_ARR);
+    let mut calldata = Vec::from(PRIMALITY_CHECK_FUNCTION_SELECTOR_ARR);
     calldata.extend(arg.iter());
     calldata.extend(arg.into_iter());
 
@@ -174,7 +155,7 @@ pub fn test_primality_check_arguments_concrete_assert_pass() {
 
 #[test]
 pub fn test_primality_check_arguments_concrete_assert_fail() {
-    let pgm = parse_bytecode(BYTECODE);
+    let pgm = parse_bytecode(PRIMALITY_CHECK_BYTECODE);
     let mut m = Machine::new(pgm);
 
     // 953 * 1021 == 973013
@@ -189,7 +170,7 @@ pub fn test_primality_check_arguments_concrete_assert_fail() {
     arg2[30] = 0x03;
     arg2[31] = 0xFD;
 
-    let mut calldata = Vec::from(FUNCTION_SELECTOR_ARR);
+    let mut calldata = Vec::from(PRIMALITY_CHECK_FUNCTION_SELECTOR_ARR);
     calldata.extend(arg1.into_iter());
     calldata.extend(arg2.into_iter());
 
@@ -209,36 +190,31 @@ pub fn test_primality_check_arguments_concrete_assert_fail() {
         }
     );
 
-    assert_eq!(reverted.revert_string().unwrap(), ASSERT_REVERT_STRING,);
+    assert_eq!(
+        reverted.revert_string().unwrap(),
+        PRIMALITY_CHECK_ASSERT_REVERT_STRING,
+    );
 }
 
 #[test]
 pub fn test_primality_check_arguments_symbolic() {
-    let pgm = parse_bytecode(BYTECODE);
+    let pgm = parse_bytecode(PRIMALITY_CHECK_BYTECODE);
     let mut m = Machine::new(pgm);
 
-    m.calldata = Rc::new(Calldata::symbolic(FUNCTION_SELECTOR_ARR, 64));
+    m.calldata = Rc::new(Calldata::symbolic(
+        PRIMALITY_CHECK_FUNCTION_SELECTOR_ARR,
+        64,
+    ));
 
     let res = m.run_sym();
 
     let reverted = res
-        .leaves
-        .iter()
-        .find(|m| {
-            m.revert_string() == Some(ASSERT_REVERT_STRING.into()) && m.solve_results.is_some()
-        })
+        .find_reverted(PRIMALITY_CHECK_ASSERT_REVERT_STRING.into())
         .unwrap();
 
     let byte_solutions = &reverted.solve_results.as_ref().unwrap().bytes;
+    
+    let concrete_calldata = reverted.calldata.solve(byte_solutions);
 
-    let concrete_calldata: Vec<u8> = reverted
-        .calldata
-        .inner()
-        .iter()
-        .map(|sym_byte| byte_solutions.get(sym_byte).unwrap().clone())
-        .collect();
-
-    let concrete_calldata_string = hex::encode(concrete_calldata);
-
-    assert_eq!(concrete_calldata_string, "d5a2424900000000000000000000000000000000000000000000000000000000000003b900000000000000000000000000000000000000000000000000000000000003fd");
+    assert_eq!(concrete_calldata, "d5a2424900000000000000000000000000000000000000000000000000000000000003b900000000000000000000000000000000000000000000000000000000000003fd");
 }
