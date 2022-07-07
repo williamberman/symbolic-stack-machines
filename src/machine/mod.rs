@@ -104,7 +104,13 @@ impl Machine {
                             queue.push(m)
                         } else {
                             match solve_z3(&m.constraints, vec![], vec![]) {
-                                Some(_) => queue.push(m),
+                                Some(_) => {
+                                    if m.halt {
+                                        leaves.push(m)
+                                    } else {
+                                        queue.push(m)
+                                    }
+                                },
                                 None => pruned.push(m),
                             }
                         }

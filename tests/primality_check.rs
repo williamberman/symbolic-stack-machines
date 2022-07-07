@@ -212,17 +212,17 @@ pub fn test_primality_check_arguments_concrete_assert_fail() {
     );
 }
 
-#[test]
-pub fn test_primality_check_arguments_symbolic() {
-    let pgm = parse_bytecode(BYTECODE);
-    let mut m = Machine::new(pgm);
+// #[test]
+// pub fn test_primality_check_arguments_symbolic() {
+//     let pgm = parse_bytecode(BYTECODE);
+//     let mut m = Machine::new(pgm);
 
-    m.calldata = Rc::new(Calldata::symbolic(FUNCTION_SELECTOR_ARR, 64));
+//     m.calldata = Rc::new(Calldata::symbolic(FUNCTION_SELECTOR_ARR, 64));
 
-    let res = m.run_sym();
+//     let res = m.run_sym();
 
-    dbg!(res.leaves.len());
-    dbg!(res.pruned.len());
+//     dbg!(res.leaves.len());
+//     dbg!(res.pruned.len());
 
-    todo!()
-}
+//     todo!()
+// }
