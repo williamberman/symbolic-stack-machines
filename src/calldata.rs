@@ -32,8 +32,9 @@ impl Calldata {
             .collect();
 
         let args = (5_u8..(5 + n_symbolic_bytes)).map(|idx| {
-            let mut s: String = "calldata".into();
+            let mut s: String = "calldata[".into();
             s.push_str(&idx.to_string());
+            s.push_str("]");
             Byte::S(s)
         });
 
@@ -72,18 +73,17 @@ impl From<Vec<u8>> for Calldata {
 
 impl Into<String> for Calldata {
     fn into(self) -> String {
-        let concrete_calldata: Vec<u8> = self
-            .inner
-            .into_iter()
-            .map(|sym_byte| {
-                match sym_byte {
-                    // TODO use better string rep
-                    Byte::S(_) => 0xff,
-                    Byte::C(x) => x,
-                }
-            })
-            .collect();
+        let mut rv = String::new();
 
-        hex::encode(concrete_calldata)
+        self.inner.into_iter().for_each(|sym_byte| match sym_byte {
+            Byte::S(s) => {
+                rv.push_str("(");
+                rv.push_str(&s);
+                rv.push_str(")");
+            },
+            Byte::C(x) => rv.push_str(&hex::encode(vec![x])),
+        });
+
+        rv
     }
 }
