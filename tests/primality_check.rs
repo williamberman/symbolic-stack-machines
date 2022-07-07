@@ -98,14 +98,7 @@ pub fn test_primality_check_zero_arguments() {
     assert_eq!(pruned.constraints, Vector::from(vec![expected_constraint]));
 
     // Reverts because calldata is too short
-    let reverted = res.leaves.get(0).unwrap();
-    assert_eq!(
-        reverted.revert_ptr,
-        Some(MemPtr {
-            offset: 0.into(),
-            length: 0.into()
-        })
-    );
+    assert_eq!(res.leaves.get(0).unwrap().revert_string().unwrap(), "");
 }
 
 #[test]
@@ -120,14 +113,9 @@ pub fn test_primality_check_arguments_concrete_require_fail_min() {
 
     let res = m.run_sym();
 
-    dbg!(res.leaves.len());
-    dbg!(res.pruned.len());
+    assert_eq!(res.leaves.len(), 1);
 
-    dbg!(&res.pruned.get(0).unwrap().constraints);
-    dbg!(&res.pruned.get(1).unwrap().constraints);
-    dbg!(&res.pruned.get(2).unwrap().constraints);
-
-    todo!();
+    assert_eq!(res.leaves.get(0).unwrap().revert_string().unwrap(), "");
 }
 
 #[test]
@@ -149,14 +137,9 @@ pub fn test_primality_check_arguments_concrete_require_fail_max() {
 
     let res = m.run_sym();
 
-    dbg!(res.leaves.len());
-    dbg!(res.pruned.len());
+    assert_eq!(res.leaves.len(), 1);
 
-    dbg!(&res.pruned.get(0).unwrap().constraints);
-    dbg!(&res.pruned.get(1).unwrap().constraints);
-    dbg!(&res.pruned.get(2).unwrap().constraints);
-
-    todo!()
+    assert_eq!(res.leaves.get(0).unwrap().revert_string().unwrap(), "");
 }
 
 #[test]
@@ -175,12 +158,11 @@ pub fn test_primality_check_arguments_concrete_assert_pass() {
 
     let res = m.run_sym();
 
-    dbg!(res.leaves.len());
-    dbg!(res.pruned.len());
+    assert_eq!(res.leaves.len(), 1);
 
-    dbg!(&res.leaves.get(0).unwrap().revert_ptr);
+    let returned = res.leaves.get(0).unwrap();
 
-    todo!();
+    assert_eq!(returned.return_string().unwrap(), "0000000000000000000000000000000000000000000000000000000000000539");
 }
 
 #[test]
@@ -208,9 +190,6 @@ pub fn test_primality_check_arguments_concrete_assert_fail() {
 
     let res = m.run_sym();
 
-    dbg!(res.leaves.len());
-    dbg!(res.pruned.len());
-
     let reverted = res.leaves.get(0).unwrap();
 
     let revert = reverted.revert_ptr.clone().unwrap();
@@ -223,14 +202,9 @@ pub fn test_primality_check_arguments_concrete_assert_fail() {
         }
     );
 
-    let revert_string = reverted.revert_string().unwrap();
-
-    dbg!(revert_string);
-
-    todo!()
+    assert_eq!(reverted.revert_string().unwrap(), "4e487b710000000000000000000000000000000000000000000000000000000000000001");
 }
 
-#[test]
 pub fn test_primality_check_arguments_symbolic() {
     todo!()
 }
