@@ -19,6 +19,10 @@ pub fn main() {
 
     let symbolic_calldata = Calldata::symbolic(PRIMALITY_CHECK_FUNCTION_SELECTOR_ARR, 64);
 
+    let symbolic_calldata_string = Into::<String>::into(symbolic_calldata.clone());
+
+    info!("symbolic_calldata: {}", symbolic_calldata_string);
+
     m.calldata = Rc::new(symbolic_calldata);
 
     let res = m.run_sym();
@@ -31,5 +35,6 @@ pub fn main() {
 
     let concrete_calldata = reverted.calldata.solve(byte_solutions);
 
+    info!("symbolic_calldata: {}", symbolic_calldata_string);
     info!("concrete_calldata: {}", concrete_calldata);
 }

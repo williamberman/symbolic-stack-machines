@@ -8,6 +8,7 @@ use std::{
 };
 
 use im::Vector;
+use log::info;
 
 use crate::{
     calldata::Calldata,
@@ -171,6 +172,8 @@ impl Machine {
             } else {
                 break;
             }
+
+            info!("queue: {}, leaves: {}, pruned: {}", rv.queue.len(), rv.leaves.len(), rv.pruned.len());
         }
 
         rv

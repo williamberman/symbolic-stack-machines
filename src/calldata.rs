@@ -5,7 +5,7 @@ use crate::val::{
     word::{Word, BYTES_IN_WORD},
 };
 
-#[derive(Default, Debug, PartialEq, Eq)]
+#[derive(Default, Clone, Debug, PartialEq, Eq)]
 pub struct Calldata {
     inner: Vec<Byte>,
 }
@@ -75,7 +75,13 @@ impl Into<String> for Calldata {
         let concrete_calldata: Vec<u8> = self
             .inner
             .into_iter()
-            .map(|sym_byte| sym_byte.into())
+            .map(|sym_byte| {
+                match sym_byte {
+                    // TODO use better string rep
+                    Byte::S(_) => 0xff,
+                    Byte::C(x) => x,
+                }
+            })
             .collect();
 
         hex::encode(concrete_calldata)
