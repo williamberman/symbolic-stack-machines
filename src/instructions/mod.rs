@@ -2,7 +2,7 @@ mod convert;
 use primitive_types::U256;
 
 use crate::{
-    machine::Machine,
+    machine::{Machine, revert::Revert},
     val::{byte::Byte, word::Word},
 };
 
@@ -238,7 +238,7 @@ impl Instruction {
                 cont.push(m);
             }
             Instruction::CallValue => {
-                m.stack.push(m.env.call_value.clone());
+                m.stack.push(m.call_value.clone());
                 m.pc += 1;
                 cont.push(m);
             }
@@ -262,8 +262,10 @@ impl Instruction {
             Instruction::Revert => {
                 let offset = m.stack.pop().unwrap();
                 let length = m.stack.pop().unwrap();
-                m.env.revert_offset = Some(offset);
-                m.env.revert_length = Some(length);
+                m.revert = Some(Revert{
+                    offset,
+                    length
+                });
                 m.halt = true;
                 cont.push(m);
             }

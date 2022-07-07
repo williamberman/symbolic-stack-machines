@@ -1,22 +1,26 @@
+pub mod revert;
 use std::rc::Rc;
 
 use im::Vector;
 
 use crate::{
-    calldata::Calldata, environment::Env, instructions::Instruction, memory::Memory, stack::Stack,
-    val::constraint::Constraint, z3::solve_z3,
+    calldata::Calldata, instructions::Instruction, memory::Memory, stack::Stack,
+    val::{constraint::Constraint, word::Word, byte::Byte}, z3::solve_z3,
 };
+
+use self::revert::Revert;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Machine {
     pub stack: Stack,
     pub mem: Memory,
-    pub env: Env,
     pub pc: usize,
     pub pgm: Rc<Vec<Instruction>>,
     pub calldata: Rc<Calldata>,
     pub constraints: Vector<Constraint>,
     pub halt: bool,
+    pub call_value: Word,
+    pub revert: Option<Revert>,
 }
 
 impl Default for Machine {
@@ -24,12 +28,13 @@ impl Default for Machine {
         Self {
             stack: Default::default(),
             mem: Default::default(),
-            env: Default::default(),
             pc: 0,
             pgm: Default::default(),
             calldata: Default::default(),
             constraints: Default::default(),
             halt: false,
+            call_value: Default::default(),
+            revert: Default::default()
         }
     }
 }
@@ -100,5 +105,18 @@ impl Machine {
         let i = self.pgm.get(self.pc).unwrap().clone();
 
         i.exec(self)
+    }
+
+    pub fn revert_bytes(&self) -> Option<Vec<Byte>> {
+        self.revert.clone().map(|revert| {
+            self.mem.read_bytes(revert.offset, revert.length)
+        })
+    }
+
+    pub fn revert_string(&self) -> Option<String> {
+        self.revert_bytes().map(|bytes| {
+            let bs: Vec<u8> = bytes.into_iter().map(|x| x.into()).collect();
+            hex::encode(bs)
+        })
     }
 }

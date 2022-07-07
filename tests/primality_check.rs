@@ -1,7 +1,11 @@
-use std::{rc::Rc, ops::Not};
+use std::{ops::Not, rc::Rc};
 
 use im::Vector;
-use symbolic_stack_machines::{instructions::parse_bytecode, machine::Machine, val::word::Word};
+use symbolic_stack_machines::{
+    instructions::parse_bytecode,
+    machine::{revert::Revert, Machine},
+    val::word::Word,
+};
 
 // // SPDX-License-Identifier: UNLICENSED
 // pragma solidity ^0.8.9;
@@ -31,10 +35,15 @@ pub fn test_primality_check_empty_calldata() {
     assert_eq!(res.leaves.len(), 1);
     assert_eq!(res.pruned.len(), 0);
 
-    let m = res.leaves.get(0).unwrap();
+    let reverted = res.leaves.get(0).unwrap();
 
-    assert_eq!(m.env.revert_offset, Some(0.into()));
-    assert_eq!(m.env.revert_length, Some(0.into()));
+    assert_eq!(
+        reverted.revert,
+        Some(Revert {
+            offset: 0.into(),
+            length: 0.into()
+        })
+    );
 }
 
 #[test]
@@ -52,13 +61,21 @@ pub fn test_primality_check_wrong_calldata() {
     // Attempts to takes jump to function but has wrong calldata
     // so is unsat
     let pruned = res.pruned.get(0).unwrap();
-    let expected_constraint = Word::C(FUNCTION_SELECTOR_INT.into())._eq_word(Word::zero())._eq(Word::zero()).not();
+    let expected_constraint = Word::C(FUNCTION_SELECTOR_INT.into())
+        ._eq_word(Word::zero())
+        ._eq(Word::zero())
+        .not();
     assert_eq!(pruned.constraints, Vector::from(vec![expected_constraint]));
 
     // Reverts because wrong calldata
     let reverted = res.leaves.get(0).unwrap();
-    assert_eq!(reverted.env.revert_offset, Some(0.into()));
-    assert_eq!(reverted.env.revert_length, Some(0.into()));
+    assert_eq!(
+        reverted.revert,
+        Some(Revert {
+            offset: 0.into(),
+            length: 0.into()
+        })
+    );
 }
 
 #[test]
@@ -75,13 +92,20 @@ pub fn test_primality_check_zero_arguments() {
 
     // Pruned path where function selector in calldata not correct
     let pruned = res.pruned.get(0).unwrap();
-    let expected_constraint = Word::C(FUNCTION_SELECTOR_INT.into())._eq_word(FUNCTION_SELECTOR_INT.into())._eq(Word::zero());
+    let expected_constraint = Word::C(FUNCTION_SELECTOR_INT.into())
+        ._eq_word(FUNCTION_SELECTOR_INT.into())
+        ._eq(Word::zero());
     assert_eq!(pruned.constraints, Vector::from(vec![expected_constraint]));
 
     // Reverts because calldata is too short
     let reverted = res.leaves.get(0).unwrap();
-    assert_eq!(reverted.env.revert_offset, Some(0.into()));
-    assert_eq!(reverted.env.revert_length, Some(0.into()));
+    assert_eq!(
+        reverted.revert,
+        Some(Revert {
+            offset: 0.into(),
+            length: 0.into()
+        })
+    );
 }
 
 #[test]
@@ -154,24 +178,27 @@ pub fn test_primality_check_arguments_concrete_assert_pass() {
     dbg!(res.leaves.len());
     dbg!(res.pruned.len());
 
-    dbg!(&res.leaves.get(0).unwrap().env);
+    dbg!(&res.leaves.get(0).unwrap().revert);
 
     todo!();
 }
 
 #[test]
 pub fn test_primality_check_arguments_concrete_assert_fail() {
-    // TODO(HERE)
     let pgm = parse_bytecode(BYTECODE);
     let mut m = Machine::new(pgm);
 
     // 953 * 1021 == 973013
-    // 953 == 0x
-    let mut arg1 = [0_u8; 32];
-    arg1[31] = 0x02;
 
+    // 953 == 0x03B9
+    let mut arg1 = [0_u8; 32];
+    arg1[30] = 0x03;
+    arg1[31] = 0xB9;
+
+    // 1021 == 0x03FD
     let mut arg2 = [0_u8; 32];
-    arg2[31] = 0x02;
+    arg2[30] = 0x03;
+    arg2[31] = 0xFD;
 
     let mut calldata = Vec::from(FUNCTION_SELECTOR_ARR);
     calldata.extend(arg1.into_iter());
@@ -183,6 +210,22 @@ pub fn test_primality_check_arguments_concrete_assert_fail() {
 
     dbg!(res.leaves.len());
     dbg!(res.pruned.len());
+
+    let reverted = res.leaves.get(0).unwrap();
+
+    let revert = reverted.revert.clone().unwrap();
+
+    assert_eq!(
+        revert,
+        Revert {
+            offset: 0.into(),
+            length: 36.into()
+        }
+    );
+
+    let revert_string = reverted.revert_string().unwrap();
+
+    dbg!(revert_string);
 
     todo!()
 }

@@ -22,6 +22,19 @@ impl Memory {
         self.read_byte_inner(Into::<usize>::into(idx))
     }
 
+    pub fn read_bytes(&self, idx: Word, len: Word) -> Vec<Byte> {
+        let xidx: usize = idx.into();
+        let xlen: usize = len.into();
+
+        let mut rv = vec![0.into(); xlen];
+
+        for i in 0..xlen {
+            rv[i] = self.inner.get(xidx + i).unwrap().clone();
+        }
+
+        rv
+    }
+
     pub fn write_word(&mut self, idx: Word, val: Word) {
         let xidx: usize = idx.into();
 
