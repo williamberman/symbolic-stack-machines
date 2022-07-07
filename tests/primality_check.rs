@@ -6,7 +6,6 @@ use symbolic_stack_machines::{
     instructions::parse_bytecode,
     machine::{mem_ptr::MemPtr, Machine},
     val::word::Word,
-    z3::solve_z3,
 };
 
 // // SPDX-License-Identifier: UNLICENSED
@@ -213,33 +212,33 @@ pub fn test_primality_check_arguments_concrete_assert_fail() {
     assert_eq!(reverted.revert_string().unwrap(), ASSERT_REVERT_STRING,);
 }
 
-// #[test]
-// pub fn test_primality_check_arguments_symbolic_no_constraint_solve_while_running() {
-//     let pgm = parse_bytecode(BYTECODE);
-//     let mut m = Machine::new(pgm);
+#[test]
+pub fn test_primality_check_arguments_symbolic() {
+    let pgm = parse_bytecode(BYTECODE);
+    let mut m = Machine::new(pgm);
 
-//     m.constraint_solve = false;
-//     m.calldata = Rc::new(Calldata::symbolic(FUNCTION_SELECTOR_ARR, 64));
+    m.calldata = Rc::new(Calldata::symbolic(FUNCTION_SELECTOR_ARR, 64));
 
-//     let res = m.run_sym();
+    let res = m.run_sym();
 
-//     dbg!(res.leaves.len());
-//     dbg!(res.pruned.len());
+    let reverted = res
+        .leaves
+        .iter()
+        .find(|m| {
+            m.revert_string() == Some(ASSERT_REVERT_STRING.into()) && m.solve_results.is_some()
+        })
+        .unwrap();
 
-//     res.leaves.iter().filter(|m| {
-//         m.revert_string() == Some(ASSERT_REVERT_STRING.into())
-//     }).for_each(|m| {
-//         dbg!("***********");
-//         dbg!(m.id);
-//         match solve_z3(&m.constraints, vec![], vec![]) {
-//             Some(_) => {
-//                 dbg!("sat");
-//             }
-//             None => {
-//                 dbg!("unsat");
-//             }
-//         }
-//     });
+    let byte_solutions = &reverted.solve_results.as_ref().unwrap().bytes;
 
-//     todo!()
-// }
+    let concrete_calldata: Vec<u8> = reverted
+        .calldata
+        .inner()
+        .iter()
+        .map(|sym_byte| byte_solutions.get(sym_byte).unwrap().clone())
+        .collect();
+
+    let concrete_calldata_string = hex::encode(concrete_calldata);
+
+    assert_eq!(concrete_calldata_string, "d5a2424900000000000000000000000000000000000000000000000000000000000003b900000000000000000000000000000000000000000000000000000000000003fd");
+}
