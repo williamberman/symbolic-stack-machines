@@ -29,6 +29,7 @@ impl Into<u8> for Instruction {
             Instruction::Push(n) => 0x60 + n - 1,
             Instruction::Dup(n) => 0x80 + n - 1,
             Instruction::Swap(n) => 0x90 + n - 1,
+            Instruction::Return => 0xF3,
             Instruction::Revert => 0xFD,
             Instruction::Lit(x) => {
                 match x {
@@ -87,6 +88,7 @@ impl From<u8> for Instruction {
             0x56 => Instruction::Jump,
             0x57 => Instruction::JumpI,
             0x5B => Instruction::Jumpdest,
+            0xF3 => Instruction::Return,
             0xFD => Instruction::Revert,
             x => Instruction::Lit(Byte::C(x))
         }

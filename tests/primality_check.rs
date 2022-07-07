@@ -3,7 +3,7 @@ use std::{ops::Not, rc::Rc};
 use im::Vector;
 use symbolic_stack_machines::{
     instructions::parse_bytecode,
-    machine::{revert::Revert, Machine},
+    machine::{mem_ptr::MemPtr, Machine},
     val::word::Word,
 };
 
@@ -38,8 +38,8 @@ pub fn test_primality_check_empty_calldata() {
     let reverted = res.leaves.get(0).unwrap();
 
     assert_eq!(
-        reverted.revert,
-        Some(Revert {
+        reverted.revert_ptr,
+        Some(MemPtr {
             offset: 0.into(),
             length: 0.into()
         })
@@ -70,8 +70,8 @@ pub fn test_primality_check_wrong_calldata() {
     // Reverts because wrong calldata
     let reverted = res.leaves.get(0).unwrap();
     assert_eq!(
-        reverted.revert,
-        Some(Revert {
+        reverted.revert_ptr,
+        Some(MemPtr {
             offset: 0.into(),
             length: 0.into()
         })
@@ -100,8 +100,8 @@ pub fn test_primality_check_zero_arguments() {
     // Reverts because calldata is too short
     let reverted = res.leaves.get(0).unwrap();
     assert_eq!(
-        reverted.revert,
-        Some(Revert {
+        reverted.revert_ptr,
+        Some(MemPtr {
             offset: 0.into(),
             length: 0.into()
         })
@@ -178,7 +178,7 @@ pub fn test_primality_check_arguments_concrete_assert_pass() {
     dbg!(res.leaves.len());
     dbg!(res.pruned.len());
 
-    dbg!(&res.leaves.get(0).unwrap().revert);
+    dbg!(&res.leaves.get(0).unwrap().revert_ptr);
 
     todo!();
 }
@@ -213,11 +213,11 @@ pub fn test_primality_check_arguments_concrete_assert_fail() {
 
     let reverted = res.leaves.get(0).unwrap();
 
-    let revert = reverted.revert.clone().unwrap();
+    let revert = reverted.revert_ptr.clone().unwrap();
 
     assert_eq!(
         revert,
-        Revert {
+        MemPtr {
             offset: 0.into(),
             length: 36.into()
         }

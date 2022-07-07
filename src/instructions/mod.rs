@@ -2,7 +2,7 @@ mod convert;
 use primitive_types::U256;
 
 use crate::{
-    machine::{Machine, revert::Revert},
+    machine::{Machine, mem_ptr::MemPtr},
     val::{byte::Byte, word::Word},
 };
 
@@ -35,6 +35,7 @@ pub enum Instruction {
     Dup(u8),
     Swap(u8),
     Revert,
+    Return,
 
     // Literal byte, used as data.
     Lit(Byte),
@@ -259,10 +260,20 @@ impl Instruction {
                 m.pc += 1;
                 cont.push(m);
             }
+            Instruction::Return => {
+                let offset = m.stack.pop().unwrap();
+                let length = m.stack.pop().unwrap();
+                m.return_ptr = Some(MemPtr{
+                    offset,
+                    length
+                });
+                m.halt = true;
+                cont.push(m);
+            }
             Instruction::Revert => {
                 let offset = m.stack.pop().unwrap();
                 let length = m.stack.pop().unwrap();
-                m.revert = Some(Revert{
+                m.revert_ptr = Some(MemPtr{
                     offset,
                     length
                 });

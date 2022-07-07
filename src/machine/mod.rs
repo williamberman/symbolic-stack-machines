@@ -1,4 +1,4 @@
-pub mod revert;
+pub mod mem_ptr;
 use std::rc::Rc;
 
 use im::Vector;
@@ -12,7 +12,7 @@ use crate::{
     z3::solve_z3,
 };
 
-use self::revert::Revert;
+use self::mem_ptr::MemPtr;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Machine {
@@ -25,7 +25,8 @@ pub struct Machine {
     pub constraints: Vector<Constraint>,
     pub halt: bool,
     pub call_value: Word,
-    pub revert: Option<Revert>,
+    pub return_ptr: Option<MemPtr>,
+    pub revert_ptr: Option<MemPtr>,
 }
 
 impl Clone for Machine {
@@ -40,7 +41,8 @@ impl Clone for Machine {
             constraints: self.constraints.clone(),
             halt: self.halt.clone(),
             call_value: self.call_value.clone(),
-            revert: self.revert.clone(),
+            return_ptr: self.return_ptr.clone(),
+            revert_ptr: self.revert_ptr.clone(),
         }
     }
 }
@@ -57,7 +59,8 @@ impl Default for Machine {
             constraints: Default::default(),
             halt: false,
             call_value: Default::default(),
-            revert: Default::default(),
+            return_ptr: Default::default(),
+            revert_ptr: Default::default(),
         }
     }
 }
@@ -131,15 +134,36 @@ impl Machine {
     }
 
     pub fn revert_bytes(&self) -> Option<Vec<Byte>> {
-        self.revert
+        self.revert_ptr
             .clone()
-            .map(|revert| self.mem.read_bytes(revert.offset, revert.length))
+            .map(|ptr| self.mem_ptr_bytes(ptr))
     }
 
     pub fn revert_string(&self) -> Option<String> {
-        self.revert_bytes().map(|bytes| {
-            let bs: Vec<u8> = bytes.into_iter().map(|x| x.into()).collect();
-            hex::encode(bs)
-        })
+        self.revert_ptr
+            .clone()
+            .map(|ptr| self.mem_ptr_string(ptr))
+    }
+
+    pub fn return_bytes(&self) -> Option<Vec<Byte>> {
+        self.return_ptr
+            .clone()
+            .map(|ptr| self.mem_ptr_bytes(ptr))
+    }
+
+    pub fn return_string(&self) -> Option<String> {
+        self.return_ptr
+            .clone()
+            .map(|ptr| self.mem_ptr_string(ptr))
+    }
+
+    fn mem_ptr_bytes(&self, ptr: MemPtr) -> Vec<Byte> {
+        self.mem.read_bytes(ptr.offset, ptr.length)
+    }
+
+    fn mem_ptr_string(&self, ptr: MemPtr) -> String {
+        let bytes = self.mem_ptr_bytes(ptr);
+        let bs: Vec<u8> = bytes.into_iter().map(|x| x.into()).collect();
+        hex::encode(bs)
     }
 }
