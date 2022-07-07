@@ -3,7 +3,12 @@ use primitive_types::U256;
 
 use crate::instructions::Instruction;
 
-use super::{byte::Byte, constraint::Constraint};
+use super::{
+    byte::{Byte, ZERO_BYTE},
+    constraint::Constraint,
+};
+
+pub static BYTES_IN_WORD: usize = 32;
 
 #[derive(Clone, PartialEq, Eq, Debug, Hash)]
 pub enum Word {
@@ -12,6 +17,7 @@ pub enum Word {
     Add(Box<Word>, Box<Word>),
     Sub(Box<Word>, Box<Word>),
     Lt(Box<Word>, Box<Word>),
+    Shr(Box<Word>, Box<Word>),
     Ite(Box<Constraint>, Box<Word>, Box<Word>),
     Concat([Byte; 32]),
 }
@@ -99,25 +105,43 @@ impl Word {
         bs: &Vector<T>,
         idx: usize,
         len: usize,
+        allow_index_past_end: bool,
     ) -> Self {
-        Self::from_bytes(len, |offset| bs.get(idx + offset).cloned())
+        Self::from_bytes(len, |offset| {
+            if allow_index_past_end && idx + offset >= bs.len() {
+                ZERO_BYTE.clone()
+            } else {
+                bs.get(idx + offset).unwrap().clone().into()
+            }
+        })
     }
 
-    pub fn from_bytes_vec<T: Into<Byte> + Clone>(bs: &Vec<T>, idx: usize, len: usize) -> Self {
-        Self::from_bytes(len, |offset| bs.get(idx + offset).cloned())
+    pub fn from_bytes_vec<T: Into<Byte> + Clone>(
+        bs: &Vec<T>,
+        idx: usize,
+        len: usize,
+        allow_index_past_end: bool,
+    ) -> Self {
+        Self::from_bytes(len, |offset| {
+            if allow_index_past_end && idx + offset >= bs.len() {
+                ZERO_BYTE.clone()
+            } else {
+                bs.get(idx + offset).unwrap().clone().into()
+            }
+        })
     }
 
-    fn from_bytes<T: Into<Byte> + Clone, F: Fn(usize) -> Option<T>>(len: usize, f: F) -> Self {
+    fn from_bytes<F: Fn(usize) -> Byte>(len: usize, f: F) -> Self {
         let mut bytes: [u8; 32] = [0; 32];
         // TODO(will): Should be better way to initialize array
-        let mut sym_bytes: [Byte; 32] = bytes.map(|x| { x.into() });
+        let mut sym_bytes: [Byte; 32] = bytes.map(|x| x.into());
 
         let mut all_concrete = true;
 
         for i in 0..=(len - 1) {
             let write_idx = 32 - len + i;
 
-            let sym_byte: Byte = f(i).unwrap().into();
+            let sym_byte = f(i);
 
             sym_bytes[write_idx] = sym_byte.clone();
 
@@ -166,6 +190,10 @@ impl Word {
         Constraint::Eq(Box::new(self), Box::new(other))
     }
 
+    pub fn _eq_word(self, other: Self) -> Self {
+        Constraint::Eq(Box::new(self), Box::new(other)).ite(Word::one(), Word::zero())
+    }
+
     pub fn constant_instruction<T>(val: T) -> [Instruction; 32]
     where
         Self: From<T>,
@@ -181,8 +209,8 @@ impl Word {
                 } else {
                     Word::zero()
                 }
-            },
-            (l, r) => Word::Lt(Box::new(l), Box::new(r))
+            }
+            (l, r) => Word::Lt(Box::new(l), Box::new(r)),
         }
     }
 }
@@ -209,6 +237,26 @@ impl std::ops::Sub for Word {
     }
 }
 
+impl std::ops::Shr for Word {
+    type Output = Self;
+
+    fn shr(self, rhs: Self) -> Self::Output {
+        match (self, rhs) {
+            (Word::C(value), Word::C(shift)) => {
+                let w = if value == U256::zero() || shift >= U256::from(256) {
+                    U256::zero()
+                } else {
+                    let shift: u64 = shift.as_u64();
+                    value >> shift as usize
+                };
+
+                w.into()
+            }
+            (value, shift) => Self::Shr(Box::new(value), Box::new(shift)),
+        }
+    }
+}
+
 mod tests {
     use crate::val::word::Word;
 
@@ -220,7 +268,7 @@ mod tests {
 
     #[test]
     pub fn word_from_bytes_full() {
-        let actual = Word::from_bytes_vec(&Vec::from(BS), 0, 32);
+        let actual = Word::from_bytes_vec(&Vec::from(BS), 0, 32, false);
         let expected = Word::from([
             0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
             24, 25, 26, 27, 28, 29, 30, 31,
@@ -231,7 +279,7 @@ mod tests {
 
     #[test]
     pub fn word_from_bytes_offset() {
-        let actual = Word::from_bytes_vec(&Vec::from(BS), 1, 32);
+        let actual = Word::from_bytes_vec(&Vec::from(BS), 1, 32, false);
         let expected = Word::from([
             1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
             25, 26, 27, 28, 29, 30, 31, 32,
@@ -242,7 +290,7 @@ mod tests {
 
     #[test]
     pub fn word_from_bytes_offset_2() {
-        let actual = Word::from_bytes_vec(&Vec::from(BS), 12, 32);
+        let actual = Word::from_bytes_vec(&Vec::from(BS), 12, 32, false);
         let expected = Word::from([
             12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33,
             34, 35, 36, 37, 38, 39, 40, 41, 42, 43,
@@ -253,7 +301,7 @@ mod tests {
 
     #[test]
     pub fn word_from_bytes_len() {
-        let actual = Word::from_bytes_vec(&Vec::from(BS), 0, 31);
+        let actual = Word::from_bytes_vec(&Vec::from(BS), 0, 31, false);
         let expected = Word::from([
             0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
             23, 24, 25, 26, 27, 28, 29, 30,
@@ -264,7 +312,7 @@ mod tests {
 
     #[test]
     pub fn word_from_bytes_len_2() {
-        let actual = Word::from_bytes_vec(&Vec::from(BS), 0, 15);
+        let actual = Word::from_bytes_vec(&Vec::from(BS), 0, 15, false);
         let expected = Word::from([
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
             11, 12, 13, 14,
@@ -275,7 +323,7 @@ mod tests {
 
     #[test]
     pub fn word_from_bytes_mixed() {
-        let actual = Word::from_bytes_vec(&Vec::from(BS), 1, 15);
+        let actual = Word::from_bytes_vec(&Vec::from(BS), 1, 15, false);
         let expected = Word::from([
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
             12, 13, 14, 15,
@@ -286,7 +334,7 @@ mod tests {
 
     #[test]
     pub fn word_from_bytes_mixed_2() {
-        let actual = Word::from_bytes_vec(&Vec::from(BS), 10, 10);
+        let actual = Word::from_bytes_vec(&Vec::from(BS), 10, 10, false);
         let expected = Word::from([
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 11, 12, 13, 14,
             15, 16, 17, 18, 19,

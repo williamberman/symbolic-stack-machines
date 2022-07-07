@@ -1,4 +1,4 @@
-use crate::val::{byte::Byte, word::Word};
+use crate::val::{byte::Byte, word::{Word, BYTES_IN_WORD}};
 
 #[derive(Default, Debug, PartialEq, Eq)]
 pub struct Calldata {
@@ -16,7 +16,7 @@ impl Calldata {
 
     pub fn read_word(&self, idx: Word) -> Word {
         let idx_unwrapped: usize = idx.into();
-        todo!()
+        Word::from_bytes_vec(&self.inner, idx_unwrapped, BYTES_IN_WORD, true)
     }
 }
 

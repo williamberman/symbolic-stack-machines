@@ -14,7 +14,9 @@ pub enum Instruction {
     Add,
     Sub,
     Lt,
+    Eq,
     IsZero,
+    Shr,
     CallValue,
     CallDataLoad,
     CallDataSize,
@@ -67,6 +69,14 @@ impl Instruction {
                 m.pc += 1;
                 cont.push(m);
             }
+            Instruction::Eq => {
+                let op_1 = m.stack.pop().unwrap();
+                let op_2 = m.stack.pop().unwrap();
+
+                m.stack.push(op_1._eq_word(op_2));
+                m.pc += 1;
+                cont.push(m);
+            }
             Instruction::IsZero => {
                 let op = m.stack.pop().unwrap();
 
@@ -78,7 +88,7 @@ impl Instruction {
                             Word::zero()
                         }
                     }
-                    op => op._eq(Word::zero()).ite(Word::one(), Word::zero()),
+                    op => op._eq_word(Word::zero())
                 };
 
                 m.stack.push(to_push);
@@ -86,9 +96,16 @@ impl Instruction {
 
                 cont.push(m);
             }
+            Instruction::Shr => {
+                let shift = m.stack.pop().unwrap();
+                let value = m.stack.pop().unwrap();
+                m.stack.push(value >> shift);
+                m.pc += 1;
+                cont.push(m);
+            }
             Instruction::Push(n) => {
                 let n_bytes = *n as usize;
-                let val = Word::from_bytes_vec(&m.pgm, m.pc + 1, n_bytes);
+                let val = Word::from_bytes_vec(&m.pgm, m.pc + 1, n_bytes, false);
                 m.stack.push(val);
                 m.pc += n_bytes + 1;
                 cont.push(m);

@@ -88,6 +88,7 @@ pub fn make_bitvec_from_word<'ctx>(ctx: &'ctx Context, w: &Word) -> BV<'ctx> {
                 &BV::from_u64(ctx, 1, WORD_BITVEC_SIZE),
                 &BV::from_u64(ctx, 0, WORD_BITVEC_SIZE),
             ),
+        Word::Shr(value, shift) => make_bitvec_from_word(ctx, value).bvlshr(&make_bitvec_from_word(ctx, shift)),
         Word::Ite(q, then, xelse) => make_constraint(ctx, q).ite(
             &make_bitvec_from_word(ctx, then),
             &make_bitvec_from_word(ctx, xelse),

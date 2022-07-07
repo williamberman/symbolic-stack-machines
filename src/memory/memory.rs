@@ -1,6 +1,6 @@
 use im::Vector;
 
-use crate::val::{byte::{Byte, ZERO_BYTE}, word::Word};
+use crate::val::{byte::{Byte, ZERO_BYTE}, word::{Word, BYTES_IN_WORD}};
 
 #[derive(Clone, Default, Debug, PartialEq, Eq)]
 pub struct Memory {
@@ -15,7 +15,7 @@ impl Memory {
     pub fn read_word(&self, idx: Word) -> Word {
         let idx_unwrapped: usize = idx.into();
 
-        Word::from_bytes_vector(&self.inner, idx_unwrapped, 32)
+        Word::from_bytes_vector(&self.inner, idx_unwrapped, BYTES_IN_WORD, false)
     }
 
     pub fn read_byte(&self, idx: Word) -> Option<&Byte> {
