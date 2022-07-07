@@ -26,4 +26,9 @@ impl Stack {
     pub fn peek_n(&self, n: usize) -> Option<&Word> {
         self.inner.get(self.inner.len() - n - 1)
     }
+
+    pub fn set(&mut self, n: usize, val: Word) {
+        let len = self.inner.len();
+        self.inner[len - n - 1] = val;
+    }
 }

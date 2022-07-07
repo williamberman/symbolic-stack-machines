@@ -58,22 +58,22 @@ impl Machine {
     }
 
     pub fn run_sym(self) -> SymResults {
-        let mut trace_tree: Vec<Machine> = vec![self];
+        let mut queue: Vec<Machine> = vec![self];
 
         let mut leaves: Vec<Machine> = vec![];
         let mut pruned: Vec<Machine> = vec![];
 
         loop {
-            let start_branch = trace_tree.pop();
+            let start_branch = queue.pop();
             if let Some(mach) = start_branch {
                 if !mach.halt {
                     let new_machines = mach.step_sym();
                     new_machines.into_iter().for_each(|m| {
                         if m.constraints.is_empty() {
-                            trace_tree.push(m)
+                            queue.push(m)
                         } else {
                             match solve_z3(&m.constraints, vec![], vec![]) {
-                                Some(_) => trace_tree.push(m),
+                                Some(_) => queue.push(m),
                                 None => pruned.push(m),
                             }
                         }

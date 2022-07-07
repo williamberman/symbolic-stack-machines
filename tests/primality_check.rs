@@ -57,3 +57,26 @@ pub fn test_primality_check_wrong_calldata() {
     assert_eq!(reverted.env.revert_offset, Some(0.into()));
     assert_eq!(reverted.env.revert_length, Some(0.into()));
 }
+
+#[test]
+pub fn test_primality_check_zero_arguments() {
+    let pgm = parse_bytecode(BYTECODE);
+    let mut m = Machine::new(pgm);
+
+    m.calldata = Rc::new(vec![0xd5_u8, 0xa2, 0x42, 0x49].into());
+
+    let res = m.run_sym();
+
+    assert_eq!(res.leaves.len(), 1);
+    assert_eq!(res.pruned.len(), 1);
+
+    // Pruned path where function selector in calldata no correct
+    let pruned = res.pruned.get(0).unwrap();
+    let expected_constraint = Word::C(FUNCTION_SELECTOR.into())._eq_word(FUNCTION_SELECTOR.into())._eq(Word::zero());
+    assert_eq!(pruned.constraints, Vector::from(vec![expected_constraint]));
+
+    // Reverts because calldata is too short
+    let reverted = res.leaves.get(0).unwrap();
+    assert_eq!(reverted.env.revert_offset, Some(0.into()));
+    assert_eq!(reverted.env.revert_length, Some(0.into()));
+}

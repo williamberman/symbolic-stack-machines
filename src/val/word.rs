@@ -1,7 +1,7 @@
 use im::Vector;
 use primitive_types::U256;
 
-use crate::instructions::Instruction;
+use crate::{instructions::Instruction, utils::I256};
 
 use super::{
     byte::{Byte, ZERO_BYTE},
@@ -17,6 +17,7 @@ pub enum Word {
     Add(Box<Word>, Box<Word>),
     Sub(Box<Word>, Box<Word>),
     Lt(Box<Word>, Box<Word>),
+    Slt(Box<Word>, Box<Word>),
     Shr(Box<Word>, Box<Word>),
     Ite(Box<Constraint>, Box<Word>, Box<Word>),
     Concat([Byte; 32]),
@@ -211,6 +212,24 @@ impl Word {
                 }
             }
             (l, r) => Word::Lt(Box::new(l), Box::new(r)),
+        }
+    }
+
+    pub fn _slt(self, other: Word) -> Word {
+        match (self, other) {
+            (Word::C(l), Word::C(r)) => {
+                let op1: I256 = l.into();
+                let op2: I256 = r.into();
+            
+                let rv = if op1.lt(&op2) {
+                    U256::one()
+                } else {
+                    U256::zero()
+                };
+
+                rv.into()
+            },
+            (l, r) => Word::Slt(Box::new(l), Box::new(r))
         }
     }
 }

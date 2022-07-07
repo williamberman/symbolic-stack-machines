@@ -9,6 +9,7 @@ impl Into<u8> for Instruction {
             Instruction::Add => 0x01,
             Instruction::Sub => 0x03,
             Instruction::Lt => 0x10,
+            Instruction::Slt => 0x12,
             Instruction::Eq => 0x14,
             Instruction::IsZero => 0x15,
             Instruction::Shr => 0x1C,
@@ -23,6 +24,7 @@ impl Into<u8> for Instruction {
             Instruction::Jumpdest => 0x5B,
             Instruction::Push(n) => 0x60 + n - 1,
             Instruction::Dup(n) => 0x80 + n - 1,
+            Instruction::Swap(n) => 0x90 + n - 1,
             Instruction::Revert => 0xFD,
             Instruction::Lit(x) => {
                 match x {
@@ -55,11 +57,16 @@ impl From<u8> for Instruction {
             return Instruction::Dup(x - 0x7F);
         }
 
+        if x >= 0x90 && x <= 0x9F {
+            return Instruction::Swap(x - 0x8F)
+        }
+
         match x {
             0x00 => Instruction::Stop,
             0x01 => Instruction::Add,
             0x03 => Instruction::Sub,
             0x10 => Instruction::Lt,
+            0x12 => Instruction::Slt,
             0x14 => Instruction::Eq,
             0x15 => Instruction::IsZero,
             0x1C => Instruction::Shr,

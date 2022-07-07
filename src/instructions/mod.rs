@@ -14,6 +14,7 @@ pub enum Instruction {
     Add,
     Sub,
     Lt,
+    Slt,
     Eq,
     IsZero,
     Shr,
@@ -28,6 +29,7 @@ pub enum Instruction {
     Jumpdest,
     Push(u8),
     Dup(u8),
+    Swap(u8),
     Revert,
 
     // Literal byte, used as data.
@@ -66,6 +68,15 @@ impl Instruction {
                 let op_2 = m.stack.pop().unwrap();
 
                 m.stack.push(op_1._lt(op_2));
+                m.pc += 1;
+                cont.push(m);
+            }
+            Instruction::Slt => {
+                let op_1 = m.stack.pop().unwrap();
+                let op_2 = m.stack.pop().unwrap();
+
+                m.stack.push(op_1._slt(op_2));
+
                 m.pc += 1;
                 cont.push(m);
             }
@@ -113,6 +124,15 @@ impl Instruction {
             Instruction::Dup(n) => {
                 let val = m.stack.peek_n(*n as usize - 1).unwrap().clone();
                 m.stack.push(val);
+                m.pc += 1;
+                cont.push(m);
+            }
+            Instruction::Swap(n) => {
+                let as_usize = *n as usize;
+                let top = m.stack.peek().unwrap().clone();
+                let nth = m.stack.peek_n(as_usize).unwrap().clone();
+                m.stack.set(0, nth);
+                m.stack.set(as_usize, top);
                 m.pc += 1;
                 cont.push(m);
             }
@@ -186,7 +206,8 @@ impl Instruction {
             }
             Instruction::CallDataLoad => {
                 let idx = m.stack.pop().unwrap();
-                m.stack.push(m.calldata.read_word(idx));
+                let val = m.calldata.read_word(idx);
+                m.stack.push(val);
                 m.pc += 1;
                 cont.push(m);
             }
