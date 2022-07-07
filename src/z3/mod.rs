@@ -4,7 +4,7 @@ use im::Vector;
 use primitive_types::U256;
 use z3::{
     ast::{Ast, Bool, BV},
-    Context, SatResult,
+    Context, SatResult, Config,
 };
 
 use crate::val::{byte::Byte, constraint::Constraint, word::Word};
@@ -18,13 +18,18 @@ pub struct SolveResults {
     pub bytes: HashMap<Byte, u8>,
 }
 
+pub fn make_z3_config() -> Config {
+    let mut cfg = z3::Config::default();
+    cfg.set_model_generation(true);
+    cfg
+}
+
 pub fn solve_z3(
     constraints: &Vector<Constraint>,
     words: Vec<Word>,
     bytes: Vec<Byte>,
 ) -> Option<SolveResults> {
-    let mut cfg = z3::Config::default();
-    cfg.set_model_generation(true);
+    let cfg = make_z3_config();
     let ctx = z3::Context::new(&cfg);
     let solver = z3::Solver::new(&ctx);
 
@@ -77,8 +82,21 @@ pub fn make_constraint<'ctx>(ctx: &'ctx Context, c: &Constraint) -> Bool<'ctx> {
 
 pub fn make_bitvec_from_word<'ctx>(ctx: &'ctx Context, w: &Word) -> BV<'ctx> {
     match w {
-        // TODO needs to support larger sizes than u64
-        Word::C(x) => BV::from_u64(ctx, x.as_u64(), WORD_BITVEC_SIZE),
+        Word::C(c) => {
+            let mut bytes = vec![0; 32];
+
+            c.to_big_endian(&mut bytes);
+
+            let x: [u8; 8] = bytes[0..8].try_into().unwrap();
+            let y: [u8; 8] = bytes[8..16].try_into().unwrap();
+            let z: [u8; 8] = bytes[16..24].try_into().unwrap();
+            let w: [u8; 8] = bytes[24..32].try_into().unwrap();
+
+            BV::from_u64(ctx, u64::from_be_bytes(x), 64)
+                .concat(&BV::from_u64(ctx, u64::from_be_bytes(y), 64))
+                .concat(&BV::from_u64(ctx, u64::from_be_bytes(z), 64))
+                .concat(&BV::from_u64(ctx, u64::from_be_bytes(w), 64))
+        }
         Word::S(x) => BV::new_const(&ctx, x.clone(), WORD_BITVEC_SIZE),
         Word::Add(l, r) => make_bitvec_from_word(ctx, l) + make_bitvec_from_word(ctx, r),
         Word::Mul(l, r) => make_bitvec_from_word(ctx, l).bvmul(&make_bitvec_from_word(ctx, r)),
