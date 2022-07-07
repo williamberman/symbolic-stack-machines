@@ -2,9 +2,10 @@ use std::{ops::Not, rc::Rc};
 
 use im::Vector;
 use symbolic_stack_machines::{
+    calldata::Calldata,
     instructions::parse_bytecode,
     machine::{mem_ptr::MemPtr, Machine},
-    val::{byte::Byte, word::Word},
+    val::word::Word,
 };
 
 // // SPDX-License-Identifier: UNLICENSED
@@ -216,18 +217,7 @@ pub fn test_primality_check_arguments_symbolic() {
     let pgm = parse_bytecode(BYTECODE);
     let mut m = Machine::new(pgm);
 
-    let mut calldata: Vec<Byte> = Vec::from(FUNCTION_SELECTOR_ARR)
-        .into_iter()
-        .map(|x| x.into())
-        .collect();
-    let args = (5_u8..69).map(|idx| {
-        let mut s: String = "calldata".into();
-        s.push_str(&idx.to_string());
-        Byte::S(s)
-    });
-    calldata.extend(args);
-
-    m.calldata = Rc::new(calldata.into());
+    m.calldata = Rc::new(Calldata::symbolic(FUNCTION_SELECTOR_ARR, 64));
 
     let res = m.run_sym();
 

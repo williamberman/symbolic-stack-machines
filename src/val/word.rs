@@ -237,7 +237,7 @@ impl Word {
             (Word::C(l), Word::C(r)) => {
                 let op1: I256 = l.into();
                 let op2: I256 = r.into();
-            
+
                 let rv = if op1.lt(&op2) {
                     U256::one()
                 } else {
@@ -245,8 +245,8 @@ impl Word {
                 };
 
                 rv.into()
-            },
-            (l, r) => Word::Slt(Box::new(l), Box::new(r))
+            }
+            (l, r) => Word::Slt(Box::new(l), Box::new(r)),
         }
     }
 }
@@ -267,10 +267,8 @@ impl std::ops::Mul for Word {
 
     fn mul(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
-            (Self::C(l), Self::C(r)) => {
-                l.overflowing_mul(r).0.into()
-            },
-            (l, r) => Word::Mul(Box::new(l), Box::new(r))
+            (Self::C(l), Self::C(r)) => l.overflowing_mul(r).0.into(),
+            (l, r) => Word::Mul(Box::new(l), Box::new(r)),
         }
     }
 }
@@ -301,6 +299,36 @@ impl std::ops::Shr for Word {
 
                 w.into()
             }
+            (Word::Concat(bytes), Word::C(shift)) => {
+                // If all bytes to the left of the bit shift are concrete, then the return value can be concrete
+                let mut n_concrete_bits = 0;
+                let mut concrete_bytes = [0_u8; 32];
+
+                let mut i = 0;
+
+                while i < 32 {
+                    match bytes[i] {
+                        Byte::C(x) => {
+                            n_concrete_bits += 8;
+                            concrete_bytes[i] = x
+                        }
+                        Byte::S(_) => {
+                            break;
+                        }
+                    }
+                    i += 1;
+                }
+
+                let shift_usize = shift.as_usize();
+
+                let n_bits_remaining: usize = 256 - shift_usize;
+
+                if n_bits_remaining <= n_concrete_bits {
+                    (U256::from(concrete_bytes) >> shift_usize).into()
+                } else {
+                    Self::Shr(Box::new(bytes.into()), Box::new(shift.into()))
+                }
+            }
             (value, shift) => Self::Shr(Box::new(value), Box::new(shift)),
         }
     }
@@ -319,8 +347,8 @@ impl std::ops::Div for Word {
                 };
 
                 rv.into()
-            },
-            (l, r) => Word::Div(Box::new(l), Box::new(r))
+            }
+            (l, r) => Word::Div(Box::new(l), Box::new(r)),
         }
     }
 }
@@ -331,7 +359,7 @@ impl std::ops::BitAnd for Word {
     fn bitand(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
             (Word::C(l), Word::C(r)) => (l & r).into(),
-            (l, r) => Word::BitAnd(Box::new(l), Box::new(r))
+            (l, r) => Word::BitAnd(Box::new(l), Box::new(r)),
         }
     }
 }

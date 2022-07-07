@@ -345,6 +345,14 @@ pub fn mstore() -> Instruction {
     Instruction::MStore
 }
 
+pub fn calldataload() -> Instruction {
+    Instruction::CallDataLoad
+}
+
+pub fn shr() -> Instruction {
+    Instruction::Shr
+}
+
 pub fn assert_ins<T: Into<Word>>(x: T) -> Instruction {
     Instruction::Assert(x.into())
 }

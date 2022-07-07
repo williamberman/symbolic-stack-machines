@@ -27,3 +27,12 @@ impl From<&str> for Byte {
         Byte::S(x.into())
     }
 }
+
+impl Byte {
+    pub fn is_concrete(&self) -> bool {
+        match self {
+            Byte::C(_) => true,
+            _ => false
+        }
+    }
+}
