@@ -1,5 +1,11 @@
 pub mod mem_ptr;
-use std::{rc::Rc, sync::{Arc, atomic::{AtomicUsize, Ordering}}};
+use std::{
+    rc::Rc,
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    },
+};
 
 use im::Vector;
 
@@ -29,7 +35,7 @@ pub struct Machine {
     pub revert_ptr: Option<MemPtr>,
 
     pub constraint_solve: bool,
-    pub ctr: Arc<AtomicUsize>
+    pub ctr: Arc<AtomicUsize>,
 }
 
 impl Clone for Machine {
@@ -78,8 +84,40 @@ impl Default for Machine {
 
 #[derive(Debug)]
 pub struct SymResults {
+    queue: Vec<Machine>,
     pub leaves: Vec<Machine>,
     pub pruned: Vec<Machine>,
+}
+
+impl SymResults {
+    fn new(m: Machine) -> Self {
+        SymResults {
+            queue: vec![m],
+            leaves: vec![],
+            pruned: vec![],
+        }
+    }
+
+    fn push(&mut self, m: Machine, constraint_solve: bool) {
+        if constraint_solve && !m.constraints.is_empty() {
+            match solve_z3(&m.constraints, vec![], vec![]) {
+                Some(_) => {
+                    self.push_inner(m);
+                }
+                None => self.pruned.push(m),
+            }
+        } else {
+            self.push_inner(m)
+        }
+    }
+
+    fn push_inner(&mut self, m: Machine) {
+        if m.halt {
+            self.leaves.push(m)
+        } else {
+            self.queue.push(m)
+        }
+    }
 }
 
 impl Machine {
@@ -100,49 +138,30 @@ impl Machine {
     }
 
     pub fn run_sym(self) -> SymResults {
-        let mut queue: Vec<Machine> = vec![self];
-
-        let mut leaves: Vec<Machine> = vec![];
-        let mut pruned: Vec<Machine> = vec![];
+        let mut rv = SymResults::new(self);
 
         loop {
-            let start_branch = queue.pop();
+            let start_branch = rv.queue.pop();
             if let Some(mach) = start_branch {
                 if !mach.halt {
+                    let n_constraints = mach.constraints.len();
                     let new_machines = mach.step_sym();
+
                     new_machines.into_iter().for_each(|m| {
-                        if m.constraints.is_empty() {
-                            queue.push(m)
-                        } else {
-                            if m.constraint_solve {
-                                match solve_z3(&m.constraints, vec![], vec![]) {
-                                    Some(_) => {
-                                        if m.halt {
-                                            leaves.push(m)
-                                        } else {
-                                            queue.push(m)
-                                        }
-                                    }
-                                    None => pruned.push(m),
-                                }
-                            } else {
-                                if m.halt {
-                                    leaves.push(m)
-                                } else {
-                                    queue.push(m)
-                                }
-                            }
-                        }
+                        // Do not constraint solve when number constraints doesn't change
+                        // because constraints can only be added
+                        let cs = m.constraint_solve && m.constraints.len() != n_constraints;
+                        rv.push(m, cs);
                     });
                 } else {
-                    leaves.push(mach);
+                    rv.leaves.push(mach);
                 }
             } else {
                 break;
             }
         }
 
-        SymResults { leaves, pruned }
+        rv
     }
 
     pub fn step(self) -> Machine {

@@ -6,6 +6,7 @@ use symbolic_stack_machines::{
     instructions::parse_bytecode,
     machine::{mem_ptr::MemPtr, Machine},
     val::word::Word,
+    z3::solve_z3,
 };
 
 // // SPDX-License-Identifier: UNLICENSED
@@ -27,6 +28,9 @@ static BYTECODE: &str = "608060405234801561001057600080fd5b506004361061002b57600
 static FUNCTION_SELECTOR_INT: u32 = 3584180809;
 
 static FUNCTION_SELECTOR_ARR: [u8; 4] = [0xd5_u8, 0xa2, 0x42, 0x49];
+
+static ASSERT_REVERT_STRING: &str =
+    "4e487b710000000000000000000000000000000000000000000000000000000000000001";
 
 #[test]
 pub fn test_primality_check_empty_calldata() {
@@ -206,23 +210,36 @@ pub fn test_primality_check_arguments_concrete_assert_fail() {
         }
     );
 
-    assert_eq!(
-        reverted.revert_string().unwrap(),
-        "4e487b710000000000000000000000000000000000000000000000000000000000000001"
-    );
+    assert_eq!(reverted.revert_string().unwrap(), ASSERT_REVERT_STRING,);
 }
 
 // #[test]
-// pub fn test_primality_check_arguments_symbolic() {
+// pub fn test_primality_check_arguments_symbolic_no_constraint_solve_while_running() {
 //     let pgm = parse_bytecode(BYTECODE);
 //     let mut m = Machine::new(pgm);
 
+//     m.constraint_solve = false;
 //     m.calldata = Rc::new(Calldata::symbolic(FUNCTION_SELECTOR_ARR, 64));
 
 //     let res = m.run_sym();
 
 //     dbg!(res.leaves.len());
 //     dbg!(res.pruned.len());
+
+//     res.leaves.iter().filter(|m| {
+//         m.revert_string() == Some(ASSERT_REVERT_STRING.into())
+//     }).for_each(|m| {
+//         dbg!("***********");
+//         dbg!(m.id);
+//         match solve_z3(&m.constraints, vec![], vec![]) {
+//             Some(_) => {
+//                 dbg!("sat");
+//             }
+//             None => {
+//                 dbg!("unsat");
+//             }
+//         }
+//     });
 
 //     todo!()
 // }
