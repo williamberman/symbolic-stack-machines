@@ -45,7 +45,7 @@ impl Memory {
             self.inner.extend(iter);
         }
 
-        Word::write_bytes(&mut self.inner, xidx, val.into());
+        Word::write_bytes(&mut self.inner, xidx, val);
     }
 
     pub fn inner(&self) -> &Vector<Byte> {

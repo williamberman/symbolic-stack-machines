@@ -171,7 +171,7 @@ impl Word {
         let u256: U256 = val.into();
 
         for i in 0..=31 {
-            bs[idx + i] = u256.byte(i).into();
+            bs[idx + i] = u256.byte(31 - i).into();
         }
     }
 
