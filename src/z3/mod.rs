@@ -1,16 +1,23 @@
-use std::collections::HashMap;
-
+use std::io::Write;
+use std::{collections::HashMap};
+use std::time::Instant;
+use std::fs::File;
 use im::Vector;
 use primitive_types::U256;
 use z3::{
     ast::{Ast, Bool, BV},
     Context, SatResult, Config,
 };
+use log::info;
+use uuid::Uuid;
 
 use crate::val::{byte::Byte, constraint::Constraint, word::Word};
 
+
 static WORD_BITVEC_SIZE: u32 = 256;
 static BYTE_BITVEC_SIZE: u32 = 8;
+
+static DUMP_CONSTRAINTS: bool = true;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SolveResults {
@@ -33,11 +40,42 @@ pub fn solve_z3(
     let ctx = z3::Context::new(&cfg);
     let solver = z3::Solver::new(&ctx);
 
+    let constraint_dump_file = if DUMP_CONSTRAINTS {
+        let file_name = format!("{}.smtlib2", Uuid::new_v4().to_string());
+        let file_path = std::env::temp_dir().join(file_name);
+        let f = File::create(file_path.clone()).unwrap();
+        Some((f, file_path))
+    } else {
+        None
+    };
+
     constraints.iter().for_each(|c| {
-        solver.assert(&make_constraint(&ctx, c));
+        let z3_constraint = make_constraint(&ctx, c);
+        let z3_constraint_simplified = z3_constraint.simplify();
+        if let Some(mut f) = &constraint_dump_file.as_ref().map(|x| { &x.0 }) {
+            let s = z3_constraint_simplified.to_string();
+            f.write(s.as_bytes()).unwrap();
+            // TODO(will): rust platform agnostic newline?
+            f.write("\n\n".as_bytes()).unwrap();
+        };
+        solver.assert(&z3_constraint_simplified);
     });
 
-    if solver.check() != SatResult::Sat {
+    let timer = Instant::now();
+
+    if let Some((_, file_path)) = constraint_dump_file {
+        info!("solving num_constaints: {}, constraints written to: {}", constraints.len(), file_path.to_str().unwrap());
+    } else {
+        info!("solving num_constaints: {}", constraints.len());
+    };
+
+    let solver_res = solver.check();
+
+    let elapsed = timer.elapsed();
+
+    info!("time elapsed: {:.2?}, result: {:?}", elapsed, solver_res);
+
+    if solver_res != SatResult::Sat {
         return None;
     };
 
@@ -83,6 +121,11 @@ pub fn make_constraint<'ctx>(ctx: &'ctx Context, c: &Constraint) -> Bool<'ctx> {
 pub fn make_bitvec_from_word<'ctx>(ctx: &'ctx Context, w: &Word) -> BV<'ctx> {
     match w {
         Word::C(c) => {
+            // TODO(will) - this looks like it's the current best way to construct a constant
+            // 256 BV. The alternative might be using the Int::from_str method and constructing
+            // the BV from that Int
+            //
+            // https://docs.rs/z3/0.11.2/z3/ast/struct.Int.html#method.from_str
             let mut bytes = vec![0; 32];
 
             c.to_big_endian(&mut bytes);
@@ -96,6 +139,7 @@ pub fn make_bitvec_from_word<'ctx>(ctx: &'ctx Context, w: &Word) -> BV<'ctx> {
                 .concat(&BV::from_u64(ctx, u64::from_be_bytes(y), 64))
                 .concat(&BV::from_u64(ctx, u64::from_be_bytes(z), 64))
                 .concat(&BV::from_u64(ctx, u64::from_be_bytes(w), 64))
+                .simplify()
         }
         Word::S(x) => BV::new_const(&ctx, x.clone(), WORD_BITVEC_SIZE),
         Word::Add(l, r) => make_bitvec_from_word(ctx, l) + make_bitvec_from_word(ctx, r),

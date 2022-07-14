@@ -196,7 +196,24 @@ impl Word {
     }
 
     pub fn _eq_word(self, other: Self) -> Self {
-        Constraint::Eq(Box::new(self), Box::new(other)).ite(Word::one(), Word::zero())
+        match (self, other) {
+            (Word::C(l), Word::C(r)) => {
+                if l == r {
+                    Word::one()
+                } else {
+                    Word::zero()
+                }
+            },
+            (l, r) => {
+                // Structural equality check can confirm equality but does not exclude that
+                // they're not equal.
+                if l == r {
+                    return Word::one();
+                }
+
+                Constraint::Eq(Box::new(l), Box::new(r)).ite(Word::one(), Word::zero())
+            }
+        }
     }
 
     pub fn constant_instruction<T>(val: T) -> [Instruction; 32]
