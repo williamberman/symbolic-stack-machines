@@ -14,6 +14,7 @@ use im::Vector;
 use log::info;
 use z3::SatResult;
 
+use crate::z3::make_solve_results;
 use crate::{
     calldata::Calldata,
     instructions::{Instruction, InstructionResult},
@@ -188,7 +189,7 @@ impl Machine {
                 }
                 None => {
                     match work_stack.pop() {
-                        Some(m) => {
+                        Some(mut m) => {
                             solver.push();
 
                             let z3_constraint = make_z3_constraint(
@@ -212,6 +213,14 @@ impl Machine {
                                 solver.pop(1);
                                 pruned.push(m);
                             } else {
+                                let model = solver.get_model().unwrap();
+                                let solve_results = make_solve_results(
+                                    &ctx,
+                                    model,
+                                    vec![],
+                                    m.calldata.inner().clone(),
+                                );
+                                m.solve_results = Some(solve_results);
                                 cur = Some(m);
                             }
                         }

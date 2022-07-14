@@ -25,7 +25,7 @@ pub fn main() {
 
     m.calldata = Rc::new(symbolic_calldata);
 
-    let res = m.run_sym();
+    let res = m.run_sym_inc();
 
     let reverted = res
         .find_reverted(PRIMALITY_CHECK_ASSERT_REVERT_STRING.into())
