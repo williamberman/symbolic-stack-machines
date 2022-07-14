@@ -24,7 +24,7 @@ pub fn test_return() {
 
     let res = m.run_sym();
 
-    assert_eq!(res.pruned.len(), 1);
+    assert_eq!(res.pruned.len(), 0);
     assert_eq!(res.leaves.len(), 1);
 
     let returned = res.leaves.get(0).unwrap();

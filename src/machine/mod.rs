@@ -1,4 +1,7 @@
 pub mod mem_ptr;
+mod sym_results;
+
+use std::time::Instant;
 use std::{
     rc::Rc,
     sync::{
@@ -9,17 +12,21 @@ use std::{
 
 use im::Vector;
 use log::info;
+use z3::SatResult;
 
 use crate::{
     calldata::Calldata,
-    instructions::Instruction,
+    instructions::{Instruction, InstructionResult},
     memory::Memory,
     stack::Stack,
     val::{byte::Byte, constraint::Constraint, word::Word},
-    z3::{solve_z3, SolveResults},
+    z3::{make_z3_config, make_z3_constraint, SolveResults},
 };
 
-use self::mem_ptr::MemPtr;
+use self::{
+    mem_ptr::MemPtr,
+    sym_results::{SymResults, SymResultsWithSolver},
+};
 
 #[derive(Debug)]
 pub struct Machine {
@@ -86,53 +93,6 @@ impl Default for Machine {
     }
 }
 
-#[derive(Debug)]
-pub struct SymResults {
-    queue: Vec<Machine>,
-    pub leaves: Vec<Machine>,
-    pub pruned: Vec<Machine>,
-}
-
-impl SymResults {
-    fn new(m: Machine) -> Self {
-        SymResults {
-            queue: vec![m],
-            leaves: vec![],
-            pruned: vec![],
-        }
-    }
-
-    pub fn find_reverted(&self, s: String) -> Option<&Machine> {
-        let ss = Some(s);
-        self.leaves.iter().find(|m| {
-            // TODO(will) - should we not have to check solve_results here?
-            m.revert_string() == ss && m.solve_results.is_some()
-        })
-    }
-
-    fn push(&mut self, mut m: Machine, constraint_solve: bool) {
-        if constraint_solve && !m.constraints.is_empty() {
-            match solve_z3(&m.constraints, vec![], m.calldata.inner().clone()) {
-                Some(sr) => {
-                    m.solve_results = Some(sr);
-                    self.push_inner(m);
-                }
-                None => self.pruned.push(m),
-            }
-        } else {
-            self.push_inner(m)
-        }
-    }
-
-    fn push_inner(&mut self, m: Machine) {
-        if m.halt {
-            self.leaves.push(m)
-        } else {
-            self.queue.push(m)
-        }
-    }
-}
-
 impl Machine {
     pub fn new(pgm: Vec<Instruction>) -> Self {
         let mut m = Self::default();
@@ -151,14 +111,20 @@ impl Machine {
     }
 
     pub fn run_sym(self) -> SymResults {
-        let mut rv = SymResults::new(self);
+        let mut rv = SymResultsWithSolver::new(self);
 
         loop {
             let start_branch = rv.queue.pop();
             if let Some(mach) = start_branch {
                 if !mach.halt {
                     let n_constraints = mach.constraints.len();
-                    let new_machines = mach.step_sym();
+                    let (new_machine, branch) = mach.step_sym();
+
+                    let mut new_machines = vec![new_machine];
+
+                    if let Some(branch) = branch {
+                        new_machines.push(branch);
+                    }
 
                     new_machines.into_iter().for_each(|m| {
                         // Do not constraint solve when number constraints doesn't change
@@ -173,20 +139,114 @@ impl Machine {
                 break;
             }
 
-            info!("queue: {}, leaves: {}, pruned: {}", rv.queue.len(), rv.leaves.len(), rv.pruned.len());
+            info!(
+                "queue: {}, leaves: {}, pruned: {}",
+                rv.queue.len(),
+                rv.leaves.len(),
+                rv.pruned.len()
+            );
         }
 
-        rv
+        rv.into()
+    }
+
+    pub fn run_sym_inc(self) -> SymResults {
+        let cfg = make_z3_config();
+        let ctx = z3::Context::new(&cfg);
+        let solver = z3::Solver::new(&ctx);
+
+        let mut cur: Option<Machine> = Some(self);
+        let mut work_stack: Vec<Machine> = vec![];
+
+        let mut pruned: Vec<Machine> = vec![];
+        let mut leaves: Vec<Machine> = vec![];
+
+        loop {
+            match cur {
+                Some(m) => {
+                    if m.halt {
+                        leaves.push(m);
+                        cur = None;
+                        solver.pop(1);
+                    } else {
+                        let (new_machine, branch) = m.step_sym();
+
+                        match branch {
+                            None => {
+                                // No new constraints added
+                                cur = Some(new_machine);
+                            }
+
+                            // New constraints added, on next loop try to take branches
+                            Some(branch) => {
+                                cur = None;
+                                work_stack.push(new_machine);
+                                work_stack.push(branch);
+                            }
+                        }
+                    }
+                }
+                None => {
+                    match work_stack.pop() {
+                        Some(m) => {
+                            solver.push();
+
+                            let z3_constraint = make_z3_constraint(
+                                &ctx,
+                                m.constraints.get(m.constraints.len() - 1).unwrap(),
+                            );
+
+                            solver.assert(&z3_constraint);
+
+                            let timer = Instant::now();
+
+                            info!("solving num_constaints: {}", m.constraints.len(),);
+
+                            let solver_res = solver.check();
+
+                            let elapsed = timer.elapsed();
+
+                            info!("time elapsed: {:.2?}, result: {:?}", elapsed, solver_res);
+
+                            if solver_res != SatResult::Sat {
+                                solver.pop(1);
+                                pruned.push(m);
+                            } else {
+                                cur = Some(m);
+                            }
+                        }
+
+                        // There is no current machine to step and the work stack is empty.
+                        // Exit the loop
+                        None => break,
+                    }
+                }
+            }
+
+            let work_stack_len_add = match cur {
+                Some(_) => 1,
+                None => 0,
+            };
+
+            info!(
+                "work_stack: {}, leaves: {}, pruned: {}",
+                work_stack.len() + work_stack_len_add,
+                leaves.len(),
+                pruned.len()
+            );
+        }
+
+        SymResults { leaves, pruned }
     }
 
     pub fn step(self) -> Machine {
         let i = self.pgm.get(self.pc).unwrap().clone();
 
         // Assume only one is returned
-        i.exec(self).pop().unwrap()
+        i.exec(self).0
     }
 
-    pub fn step_sym(self) -> Vec<Self> {
+    pub fn step_sym(self) -> InstructionResult {
         let i = self.pgm.get(self.pc).unwrap().clone();
 
         i.exec(self)

@@ -382,8 +382,7 @@ impl std::ops::BitAnd for Word {
 }
 
 mod tests {
-    use crate::val::word::Word;
-
+    #[allow(dead_code)]
     static BS: [u8; 51] = [
         0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
         25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47,
@@ -392,8 +391,8 @@ mod tests {
 
     #[test]
     pub fn word_from_bytes_full() {
-        let actual = Word::from_bytes_vec(&Vec::from(BS), 0, 32, false);
-        let expected = Word::from([
+        let actual = super::Word::from_bytes_vec(&Vec::from(BS), 0, 32, false);
+        let expected = super::Word::from([
             0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
             24, 25, 26, 27, 28, 29, 30, 31,
         ]);
@@ -403,8 +402,8 @@ mod tests {
 
     #[test]
     pub fn word_from_bytes_offset() {
-        let actual = Word::from_bytes_vec(&Vec::from(BS), 1, 32, false);
-        let expected = Word::from([
+        let actual = super::Word::from_bytes_vec(&Vec::from(BS), 1, 32, false);
+        let expected = super::Word::from([
             1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
             25, 26, 27, 28, 29, 30, 31, 32,
         ]);
@@ -414,8 +413,8 @@ mod tests {
 
     #[test]
     pub fn word_from_bytes_offset_2() {
-        let actual = Word::from_bytes_vec(&Vec::from(BS), 12, 32, false);
-        let expected = Word::from([
+        let actual = super::Word::from_bytes_vec(&Vec::from(BS), 12, 32, false);
+        let expected = super::Word::from([
             12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33,
             34, 35, 36, 37, 38, 39, 40, 41, 42, 43,
         ]);
@@ -425,8 +424,8 @@ mod tests {
 
     #[test]
     pub fn word_from_bytes_len() {
-        let actual = Word::from_bytes_vec(&Vec::from(BS), 0, 31, false);
-        let expected = Word::from([
+        let actual = super::Word::from_bytes_vec(&Vec::from(BS), 0, 31, false);
+        let expected = super::Word::from([
             0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
             23, 24, 25, 26, 27, 28, 29, 30,
         ]);
@@ -436,8 +435,8 @@ mod tests {
 
     #[test]
     pub fn word_from_bytes_len_2() {
-        let actual = Word::from_bytes_vec(&Vec::from(BS), 0, 15, false);
-        let expected = Word::from([
+        let actual = super::Word::from_bytes_vec(&Vec::from(BS), 0, 15, false);
+        let expected = super::Word::from([
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
             11, 12, 13, 14,
         ]);
@@ -447,8 +446,8 @@ mod tests {
 
     #[test]
     pub fn word_from_bytes_mixed() {
-        let actual = Word::from_bytes_vec(&Vec::from(BS), 1, 15, false);
-        let expected = Word::from([
+        let actual = super::Word::from_bytes_vec(&Vec::from(BS), 1, 15, false);
+        let expected = super::Word::from([
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
             12, 13, 14, 15,
         ]);
@@ -458,8 +457,8 @@ mod tests {
 
     #[test]
     pub fn word_from_bytes_mixed_2() {
-        let actual = Word::from_bytes_vec(&Vec::from(BS), 10, 10, false);
-        let expected = Word::from([
+        let actual = super::Word::from_bytes_vec(&Vec::from(BS), 10, 10, false);
+        let expected = super::Word::from([
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 11, 12, 13, 14,
             15, 16, 17, 18, 19,
         ]);

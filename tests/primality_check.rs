@@ -1,15 +1,13 @@
-use std::{ops::Not, rc::Rc};
+use std::rc::Rc;
 
-use im::Vector;
 use symbolic_stack_machines::{
     calldata::Calldata,
     instructions::parse_bytecode,
     machine::{mem_ptr::MemPtr, Machine},
     misc::{
         PRIMALITY_CHECK_ASSERT_REVERT_STRING, PRIMALITY_CHECK_BYTECODE,
-        PRIMALITY_CHECK_FUNCTION_SELECTOR_ARR, PRIMALITY_CHECK_FUNCTION_SELECTOR_INT,
+        PRIMALITY_CHECK_FUNCTION_SELECTOR_ARR,
     },
-    val::word::Word,
 };
 
 #[test]
@@ -41,16 +39,7 @@ pub fn test_primality_check_wrong_calldata() {
     let res = m.run_sym();
 
     assert_eq!(res.leaves.len(), 1);
-    assert_eq!(res.pruned.len(), 1);
-
-    // Attempts to takes jump to function but has wrong calldata
-    // so is unsat
-    let pruned = res.pruned.get(0).unwrap();
-    let expected_constraint = Word::C(PRIMALITY_CHECK_FUNCTION_SELECTOR_INT.into())
-        ._eq_word(Word::zero())
-        ._eq(Word::zero())
-        .not();
-    assert_eq!(pruned.constraints, Vector::from(vec![expected_constraint]));
+    assert_eq!(res.pruned.len(), 0);
 
     // Reverts because wrong calldata
     let reverted = res.leaves.get(0).unwrap();
@@ -73,14 +62,7 @@ pub fn test_primality_check_zero_arguments() {
     let res = m.run_sym();
 
     assert_eq!(res.leaves.len(), 1);
-    assert_eq!(res.pruned.len(), 1);
-
-    // Pruned path where function selector in calldata not correct
-    let pruned = res.pruned.get(0).unwrap();
-    let expected_constraint = Word::C(PRIMALITY_CHECK_FUNCTION_SELECTOR_INT.into())
-        ._eq_word(PRIMALITY_CHECK_FUNCTION_SELECTOR_INT.into())
-        ._eq(Word::zero());
-    assert_eq!(pruned.constraints, Vector::from(vec![expected_constraint]));
+    assert_eq!(res.pruned.len(), 0);
 
     // Reverts because calldata is too short
     assert_eq!(res.leaves.get(0).unwrap().revert_string().unwrap(), "");
@@ -213,8 +195,8 @@ pub fn test_primality_check_arguments_symbolic() {
         .unwrap();
 
     let byte_solutions = &reverted.solve_results.as_ref().unwrap().bytes;
-    
+
     let concrete_calldata = reverted.calldata.solve(byte_solutions);
 
-    assert_eq!(concrete_calldata, "d5a2424900000000000000000000000000000000000000000000000000000000000003b900000000000000000000000000000000000000000000000000000000000003fd");
+    assert_eq!(concrete_calldata, "d5a2424900000000000000000000000000000000000000000000000000000000000003fd00000000000000000000000000000000000000000000000000000000000003b9");
 }

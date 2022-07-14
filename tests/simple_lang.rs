@@ -4,7 +4,7 @@ use symbolic_stack_machines::{
     instructions::{add, assert_ins, iszero, jump, jumpi, lit, push1, stop, sub},
     machine::Machine,
     val::{byte::Byte, word::Word},
-    z3::{solve_z3, SolveResults},
+    z3::{solve_z3_all, SolveResults},
 };
 
 #[test]
@@ -93,14 +93,14 @@ fn test_symbolic_multiple_machines() {
 
     assert_eq!(ms.len(), 2);
 
-    let take_jump = ms.get(0).unwrap();
-    let no_take_jump = ms.get(1).unwrap();
+    let no_take_jump = ms.get(0).unwrap();
+    let take_jump = ms.get(1).unwrap();
 
     assert_eq!(take_jump.stack.peek().unwrap(), &Word::from(200));
 
     assert_eq!(no_take_jump.stack.peek().unwrap(), &Word::from(100));
 
-    let take_jump_sol = solve_z3(&take_jump.constraints, vec![], vec!["x".into()]).unwrap();
+    let take_jump_sol = solve_z3_all(&take_jump.constraints, vec![], vec!["x".into()]).unwrap();
 
     assert_eq!(
         take_jump_sol,
@@ -110,7 +110,7 @@ fn test_symbolic_multiple_machines() {
         }
     );
 
-    let no_take_jump_sol = solve_z3(&no_take_jump.constraints, vec![], vec!["x".into()]).unwrap();
+    let no_take_jump_sol = solve_z3_all(&no_take_jump.constraints, vec![], vec!["x".into()]).unwrap();
 
     assert_eq!(
         no_take_jump_sol,

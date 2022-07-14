@@ -44,9 +44,11 @@ pub enum Instruction {
     Assert(Word),
 }
 
+pub type InstructionResult = (Machine, Option<Machine>);
+
 impl Instruction {
-    pub fn exec(&self, mut m: Machine) -> Vec<Machine> {
-        let mut cont = vec![];
+    pub fn exec(&self, mut m: Machine) -> InstructionResult {
+        let mut cont: Option<Machine> = None;
 
         match self {
             Instruction::Add => {
@@ -56,7 +58,6 @@ impl Instruction {
                 m.stack.push(op_1 + op_2);
 
                 m.pc += 1;
-                cont.push(m);
             }
             Instruction::Mul => {
                 let op_1 = m.stack.pop().unwrap();
@@ -65,7 +66,6 @@ impl Instruction {
                 m.stack.push(op_1 * op_2);
 
                 m.pc += 1;
-                cont.push(m);
             }
             Instruction::Sub => {
                 let op_1 = m.stack.pop().unwrap();
@@ -74,7 +74,6 @@ impl Instruction {
                 m.stack.push(op_1 - op_2);
 
                 m.pc += 1;
-                cont.push(m);
             }
             Instruction::Div => {
                 let op_1 = m.stack.pop().unwrap();
@@ -83,7 +82,6 @@ impl Instruction {
                 m.stack.push(op_1 / op_2);
 
                 m.pc += 1;
-                cont.push(m);
             }
             Instruction::Lt => {
                 let op_1 = m.stack.pop().unwrap();
@@ -91,7 +89,6 @@ impl Instruction {
 
                 m.stack.push(op_1._lt(op_2));
                 m.pc += 1;
-                cont.push(m);
             }
             Instruction::Gt => {
                 let op_1 = m.stack.pop().unwrap();
@@ -99,7 +96,6 @@ impl Instruction {
 
                 m.stack.push(op_1._gt(op_2));
                 m.pc += 1;
-                cont.push(m);
             }
             Instruction::Slt => {
                 let op_1 = m.stack.pop().unwrap();
@@ -108,7 +104,6 @@ impl Instruction {
                 m.stack.push(op_1._slt(op_2));
 
                 m.pc += 1;
-                cont.push(m);
             }
             Instruction::Eq => {
                 let op_1 = m.stack.pop().unwrap();
@@ -116,7 +111,6 @@ impl Instruction {
 
                 m.stack.push(op_1._eq_word(op_2));
                 m.pc += 1;
-                cont.push(m);
             }
             Instruction::IsZero => {
                 let op = m.stack.pop().unwrap();
@@ -135,7 +129,6 @@ impl Instruction {
                 m.stack.push(to_push);
 
                 m.pc += 1;
-                cont.push(m);
             }
             Instruction::And => {
                 let op_1 = m.stack.pop().unwrap();
@@ -144,27 +137,23 @@ impl Instruction {
                 m.stack.push(op_1 & op_2);
 
                 m.pc += 1;
-                cont.push(m);
             }
             Instruction::Shr => {
                 let shift = m.stack.pop().unwrap();
                 let value = m.stack.pop().unwrap();
                 m.stack.push(value >> shift);
                 m.pc += 1;
-                cont.push(m);
             }
             Instruction::Push(n) => {
                 let n_bytes = *n as usize;
                 let val = Word::from_bytes_vec(&m.pgm, m.pc + 1, n_bytes, false);
                 m.stack.push(val);
                 m.pc += n_bytes + 1;
-                cont.push(m);
             }
             Instruction::Dup(n) => {
                 let val = m.stack.peek_n(*n as usize - 1).unwrap().clone();
                 m.stack.push(val);
                 m.pc += 1;
-                cont.push(m);
             }
             Instruction::Swap(n) => {
                 let as_usize = *n as usize;
@@ -173,16 +162,13 @@ impl Instruction {
                 m.stack.set(0, nth);
                 m.stack.set(as_usize, top);
                 m.pc += 1;
-                cont.push(m);
             }
             Instruction::Stop => {
                 m.halt = true;
-                cont.push(m);
             }
             Instruction::Jump => {
                 let dest: U256 = m.stack.pop().unwrap().into();
                 m.pc = dest.as_usize();
-                cont.push(m);
             }
             Instruction::JumpI => {
                 let dest: U256 = m.stack.pop().unwrap().into();
@@ -195,30 +181,26 @@ impl Instruction {
                         } else {
                             m.pc += 1;
                         }
-
-                        cont.push(m);
                     }
                     cond => {
                         let mut falls_through = m.clone();
-                        let mut takes_target = m;
+                        // m takes target
 
                         let falls_through_cond = cond._eq(Word::zero());
                         let takes_target_cond = !falls_through_cond.clone();
 
                         falls_through.constraints.push_back(falls_through_cond);
-                        takes_target.constraints.push_back(takes_target_cond);
+                        m.constraints.push_back(takes_target_cond);
 
                         falls_through.pc += 1;
-                        takes_target.pc = dest.as_usize();
+                        m.pc = dest.as_usize();
 
-                        cont.push(falls_through);
-                        cont.push(takes_target);
+                        cont = Some(falls_through);
                     }
                 }
             }
             Instruction::Jumpdest => {
                 m.pc += 1;
-                cont.push(m);
             }
             Instruction::MLoad => {
                 let mem_idx = m.stack.pop().unwrap();
@@ -227,7 +209,6 @@ impl Instruction {
                 m.stack.push(mem_val);
 
                 m.pc += 1;
-                cont.push(m);
             }
             Instruction::MStore => {
                 let offset = m.stack.pop().unwrap();
@@ -236,29 +217,24 @@ impl Instruction {
                 m.mem.write_word(offset, val);
 
                 m.pc += 1;
-                cont.push(m);
             }
             Instruction::CallValue => {
                 m.stack.push(m.call_value.clone());
                 m.pc += 1;
-                cont.push(m);
             }
             Instruction::CallDataLoad => {
                 let idx = m.stack.pop().unwrap();
                 let val = m.calldata.read_word(idx);
                 m.stack.push(val);
                 m.pc += 1;
-                cont.push(m);
             }
             Instruction::CallDataSize => {
                 m.stack.push(m.calldata.size());
                 m.pc += 1;
-                cont.push(m);
             }
             Instruction::Pop => {
                 m.stack.pop();
                 m.pc += 1;
-                cont.push(m);
             }
             Instruction::Return => {
                 let offset = m.stack.pop().unwrap();
@@ -268,7 +244,6 @@ impl Instruction {
                     length
                 });
                 m.halt = true;
-                cont.push(m);
             }
             Instruction::Revert => {
                 let offset = m.stack.pop().unwrap();
@@ -278,7 +253,6 @@ impl Instruction {
                     length
                 });
                 m.halt = true;
-                cont.push(m);
             }
             Instruction::Lit(x) => {
                 panic!("literal instruction {:?}", x);
@@ -290,11 +264,10 @@ impl Instruction {
 
                 m.pc += 1;
 
-                cont.push(m);
             }
         }
 
-        cont
+        (m, cont)
     }
 
     pub fn as_bytes(pgm: Vec<Instruction>) -> Vec<u8> {

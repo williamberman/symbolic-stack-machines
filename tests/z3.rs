@@ -1,7 +1,7 @@
 use primitive_types::U256;
 use symbolic_stack_machines::{
     val::word::Word,
-    z3::{make_bitvec_from_word, make_z3_config},
+    z3::{make_z3_bitvec_from_word, make_z3_config},
 };
 use z3::SatResult;
 
@@ -17,7 +17,7 @@ pub fn test_constant_conversion() {
     ])
     .into();
 
-    let bv = make_bitvec_from_word(&ctx, &w);
+    let bv = make_z3_bitvec_from_word(&ctx, &w);
 
     assert_eq!(solver.check(), SatResult::Sat);
 
