@@ -3,9 +3,9 @@ use std::rc::Rc;
 use symbolic_stack_machines::{
     calldata::Calldata,
     instructions::parse_bytecode,
-    machine::{mem_ptr::MemPtr, Machine},
+    machine::{mem_ptr::MemPtr, Machine, assertions::ASSERTION_FAILURE},
     misc::{
-        PRIMALITY_CHECK_ASSERT_REVERT_STRING, PRIMALITY_CHECK_BYTECODE,
+        PRIMALITY_CHECK_BYTECODE,
         PRIMALITY_CHECK_FUNCTION_SELECTOR_ARR,
     },
 };
@@ -299,7 +299,7 @@ pub fn test_primality_check_arguments_concrete_assert_fail() {
 
     assert_eq!(
         reverted.revert_string().unwrap(),
-        PRIMALITY_CHECK_ASSERT_REVERT_STRING,
+        ASSERTION_FAILURE,
     );
 }
 
@@ -342,52 +342,30 @@ pub fn test_primality_check_arguments_concrete_assert_fail_incremental_solver() 
 
     assert_eq!(
         reverted.revert_string().unwrap(),
-        PRIMALITY_CHECK_ASSERT_REVERT_STRING,
+        ASSERTION_FAILURE,
     );
 }
 
 #[test]
 pub fn test_primality_check_arguments_symbolic() {
-    let pgm = parse_bytecode(PRIMALITY_CHECK_BYTECODE);
-    let mut m = Machine::new(pgm);
+     let pgm = parse_bytecode(PRIMALITY_CHECK_BYTECODE);
+     let mut m = Machine::new(pgm);
 
-    m.calldata = Rc::new(Calldata::symbolic(
-        PRIMALITY_CHECK_FUNCTION_SELECTOR_ARR,
-        64,
-    ));
+     m.calldata = Rc::new(Calldata::symbolic(
+         PRIMALITY_CHECK_FUNCTION_SELECTOR_ARR,
+         64,
+     ));
 
-    let res = m.run_sym();
+     // NOTE(will) - other sym run strats take too long to execute for tests
+     let res = m.run_sym_all_branches(Some(vec![ASSERTION_FAILURE]));
 
-    let reverted = res
-        .find_reverted(PRIMALITY_CHECK_ASSERT_REVERT_STRING.into())
-        .unwrap();
+     let reverted = res
+         .find_reverted(ASSERTION_FAILURE.into())
+         .unwrap();
 
-    let byte_solutions = &reverted.solve_results.as_ref().unwrap().bytes;
+     let byte_solutions = &reverted.solve_results.as_ref().unwrap().bytes;
 
-    let concrete_calldata = reverted.calldata.solve(byte_solutions);
+     let concrete_calldata = reverted.calldata.solve(byte_solutions);
 
-    assert_eq!(concrete_calldata, "d5a2424900000000000000000000000000000000000000000000000000000000000003fd00000000000000000000000000000000000000000000000000000000000003b9");
-}
-
-#[test]
-pub fn test_primality_check_arguments_symbolic_incrememental_solver() {
-    let pgm = parse_bytecode(PRIMALITY_CHECK_BYTECODE);
-    let mut m = Machine::new(pgm);
-
-    m.calldata = Rc::new(Calldata::symbolic(
-        PRIMALITY_CHECK_FUNCTION_SELECTOR_ARR,
-        64,
-    ));
-
-    let res = m.run_sym_inc();
-
-    let reverted = res
-        .find_reverted(PRIMALITY_CHECK_ASSERT_REVERT_STRING.into())
-        .unwrap();
-
-    let byte_solutions = &reverted.solve_results.as_ref().unwrap().bytes;
-
-    let concrete_calldata = reverted.calldata.solve(byte_solutions);
-
-    assert_eq!(concrete_calldata, "d5a2424900000000000000000000000000000000000000000000000000000000000003fd00000000000000000000000000000000000000000000000000000000000003b9");
+     assert_eq!(concrete_calldata, "d5a2424900000000000000000000000000000000000000000000000000000000000003fd00000000000000000000000000000000000000000000000000000000000003b9");
 }
