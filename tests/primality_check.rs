@@ -11,7 +11,7 @@ use symbolic_stack_machines::{
 pub fn test_primality_check_empty_calldata() {
     let pgm = parse_bytecode_thread_local(&PRIMALITY_CHECK_BYTECODE);
     let m = Machine::new(pgm);
-    let res = m.run_sym();
+    let res = m.run_sym_solve_at_each_branch();
     assert_eq!(res.leaves.len(), 1);
     assert_eq!(res.pruned.len(), 0);
 
@@ -52,7 +52,7 @@ pub fn test_primality_check_wrong_calldata() {
 
     m.calldata = Rc::new(vec![0_u8, 0, 0, 0].into());
 
-    let res = m.run_sym();
+    let res = m.run_sym_solve_at_each_branch();
 
     assert_eq!(res.leaves.len(), 1);
     assert_eq!(res.pruned.len(), 0);
@@ -98,7 +98,7 @@ pub fn test_primality_check_zero_arguments() {
 
     m.calldata = Rc::new(Vec::from(PRIMALITY_CHECK_FUNCTION_SELECTOR_ARR).into());
 
-    let res = m.run_sym();
+    let res = m.run_sym_solve_at_each_branch();
 
     assert_eq!(res.leaves.len(), 1);
     assert_eq!(res.pruned.len(), 0);
@@ -133,7 +133,7 @@ pub fn test_primality_check_arguments_concrete_require_fail_min() {
 
     m.calldata = Rc::new(calldata.into());
 
-    let res = m.run_sym();
+    let res = m.run_sym_solve_at_each_branch();
 
     assert_eq!(res.leaves.len(), 1);
 
@@ -174,7 +174,7 @@ pub fn test_primality_check_arguments_concrete_require_fail_max() {
 
     m.calldata = Rc::new(calldata.into());
 
-    let res = m.run_sym();
+    let res = m.run_sym_solve_at_each_branch();
 
     assert_eq!(res.leaves.len(), 1);
 
@@ -219,7 +219,7 @@ pub fn test_primality_check_arguments_concrete_assert_pass() {
 
     m.calldata = Rc::new(calldata.into());
 
-    let res = m.run_sym();
+    let res = m.run_sym_solve_at_each_branch();
 
     assert_eq!(res.leaves.len(), 1);
 
@@ -280,7 +280,7 @@ pub fn test_primality_check_arguments_concrete_assert_fail() {
 
     m.calldata = Rc::new(calldata.into());
 
-    let res = m.run_sym();
+    let res = m.run_sym_solve_at_each_branch();
 
     let reverted = res.leaves.get(0).unwrap();
 
@@ -348,7 +348,7 @@ pub fn test_primality_check_arguments_symbolic() {
     ));
 
     // NOTE(will) - other sym run strats take too long to execute for tests
-    let res = m.run_sym_all_branches(Some(vec![ASSERTION_FAILURE]));
+    let res = m.run_sym(Some(vec![ASSERTION_FAILURE]));
 
     let reverted = res.find_reverted(ASSERTION_FAILURE.into()).unwrap();
 

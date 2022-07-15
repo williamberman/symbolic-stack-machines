@@ -4,7 +4,7 @@ use log::info;
 use super::{sym_results::SymResults, Machine};
 
 impl Machine {
-    pub fn run_sym(self) -> SymResults {
+    pub fn run_sym_solve_at_each_branch(self) -> SymResults {
         let mut rv = SymResultsWithSolver::new(self);
 
         loop {

@@ -18,7 +18,7 @@ pub fn test_shr_optimization() {
 
     m.calldata = Rc::new(Calldata::symbolic([0x01, 0x02, 0x03, 0x04], 64));
 
-    let res = m.run_sym();
+    let res = m.run_sym_solve_at_each_branch();
 
     assert_eq!(res.leaves.len(), 1);
     assert_eq!(res.pruned.len(), 0);

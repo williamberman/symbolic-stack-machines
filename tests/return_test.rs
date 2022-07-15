@@ -22,7 +22,7 @@ pub fn test_return() {
 
     m.calldata = Rc::new(Vec::from(FUNCTION_SELECTOR_ARR).into());
 
-    let res = m.run_sym();
+    let res = m.run_sym_solve_at_each_branch();
 
     assert_eq!(res.pruned.len(), 0);
     assert_eq!(res.leaves.len(), 1);

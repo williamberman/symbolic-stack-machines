@@ -3,7 +3,7 @@ use crate::z3::solve_z3_all;
 use super::{assertions::DEFAULT_ASSERTIONS, sym_results::SymResults, Machine};
 
 impl Machine {
-    pub fn run_sym_all_branches(self, assertions: Option<Vec<&str>>) -> SymResults {
+    pub fn run_sym_solve_at_end(self, assertions: Option<Vec<&str>>) -> SymResults {
         let mut queue: Vec<Machine> = vec![self];
         let mut complete: Vec<Machine> = vec![];
 

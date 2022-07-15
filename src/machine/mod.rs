@@ -24,7 +24,7 @@ use crate::{
     z3::SolveResults,
 };
 
-use self::mem_ptr::MemPtr;
+use self::{mem_ptr::MemPtr, sym_results::SymResults};
 
 #[derive(Debug)]
 pub struct Machine {
@@ -106,6 +106,10 @@ impl Machine {
         }
 
         x
+    }
+
+    pub fn run_sym(self, assertions: Option<Vec<&str>>) -> SymResults {
+        self.run_sym_solve_at_end(assertions)
     }
 
     pub fn step(self) -> Machine {

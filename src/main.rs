@@ -22,7 +22,7 @@ pub fn main() {
 
     m.calldata = Rc::new(symbolic_calldata);
 
-    let res = m.run_sym_all_branches(Some(vec![ASSERTION_FAILURE]));
+    let res = m.run_sym(Some(vec![ASSERTION_FAILURE]));
 
     let reverted = res.find_reverted(ASSERTION_FAILURE.into()).unwrap();
 

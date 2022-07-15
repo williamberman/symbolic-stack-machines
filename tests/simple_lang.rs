@@ -85,7 +85,7 @@ fn test_symbolic_multiple_machines() {
 
     let machine = Machine::new(pgm);
 
-    let sym_results = machine.run_sym();
+    let sym_results = machine.run_sym_solve_at_each_branch();
 
     assert_eq!(sym_results.pruned.len(), 0);
 
@@ -152,7 +152,7 @@ fn test_symbolic_multiple_machines_filtered() {
 
     let machine = Machine::new(pgm);
 
-    let sym_results = machine.run_sym();
+    let sym_results = machine.run_sym_solve_at_each_branch();
 
     assert_eq!(sym_results.pruned.len(), 1);
 
