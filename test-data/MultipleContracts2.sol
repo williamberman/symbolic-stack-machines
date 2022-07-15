@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.6;
 
-contract Caller {
+contract MultipleContracts2Caller {
     uint256 x;
-    Callee callee;
+    MultipleContracts2Callee callee;
 
     function call_Callee() public {
-        callee = new Callee();
+        callee = new MultipleContracts2Callee();
         // should fail since a.x() can be anything
         assert(callee.x() == x);
     }
 }
 
-contract Callee {
+contract MultipleContracts2Callee {
     uint256 public x;
 }

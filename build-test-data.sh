@@ -1,7 +1,14 @@
 #! /bin/bash
 
-set -eo
+set -e
 
-echo TODO
+for f in test-data/*.sol
+do 
+    solc --bin-runtime -o test-data --overwrite "$f"
+done
 
-exit 1
+for f in test-data/*.yul
+do 
+    # TODO this is not working
+    solc -o test-data --overwrite --strict-assembly "$f"
+done
