@@ -1,3 +1,5 @@
+use std::thread::LocalKey;
+
 use crate::val::byte::Byte;
 
 use super::Instruction;
@@ -101,4 +103,10 @@ pub fn parse_bytecode(bytecode: &str) -> Vec<Instruction> {
         .into_iter()
         .map(|x| Instruction::from(x))
         .collect()
+}
+
+pub fn parse_bytecode_thread_local(bytecode: &'static LocalKey<String>) -> Vec<Instruction> {
+    bytecode.with(|x| {
+        parse_bytecode(x.as_str())
+    })
 }

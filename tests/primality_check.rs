@@ -2,17 +2,14 @@ use std::rc::Rc;
 
 use symbolic_stack_machines::{
     calldata::Calldata,
-    instructions::parse_bytecode,
-    machine::{mem_ptr::MemPtr, Machine, assertions::ASSERTION_FAILURE},
-    misc::{
-        PRIMALITY_CHECK_BYTECODE,
-        PRIMALITY_CHECK_FUNCTION_SELECTOR_ARR,
-    },
+    instructions::parse_bytecode_thread_local,
+    machine::{assertions::ASSERTION_FAILURE, mem_ptr::MemPtr, Machine},
+    test_data::{PRIMALITY_CHECK_BYTECODE, PRIMALITY_CHECK_FUNCTION_SELECTOR_ARR},
 };
 
 #[test]
 pub fn test_primality_check_empty_calldata() {
-    let pgm = parse_bytecode(PRIMALITY_CHECK_BYTECODE);
+    let pgm = parse_bytecode_thread_local(&PRIMALITY_CHECK_BYTECODE);
     let m = Machine::new(pgm);
     let res = m.run_sym();
     assert_eq!(res.leaves.len(), 1);
@@ -31,7 +28,7 @@ pub fn test_primality_check_empty_calldata() {
 
 #[test]
 pub fn test_primality_check_empty_calldata_incremental_solver() {
-    let pgm = parse_bytecode(PRIMALITY_CHECK_BYTECODE);
+    let pgm = parse_bytecode_thread_local(&PRIMALITY_CHECK_BYTECODE);
     let m = Machine::new(pgm);
     let res = m.run_sym_inc();
     assert_eq!(res.leaves.len(), 1);
@@ -50,7 +47,7 @@ pub fn test_primality_check_empty_calldata_incremental_solver() {
 
 #[test]
 pub fn test_primality_check_wrong_calldata() {
-    let pgm = parse_bytecode(PRIMALITY_CHECK_BYTECODE);
+    let pgm = parse_bytecode_thread_local(&PRIMALITY_CHECK_BYTECODE);
     let mut m = Machine::new(pgm);
 
     m.calldata = Rc::new(vec![0_u8, 0, 0, 0].into());
@@ -73,7 +70,7 @@ pub fn test_primality_check_wrong_calldata() {
 
 #[test]
 pub fn test_primality_check_wrong_calldata_incremental_solver() {
-    let pgm = parse_bytecode(PRIMALITY_CHECK_BYTECODE);
+    let pgm = parse_bytecode_thread_local(&PRIMALITY_CHECK_BYTECODE);
     let mut m = Machine::new(pgm);
 
     m.calldata = Rc::new(vec![0_u8, 0, 0, 0].into());
@@ -96,7 +93,7 @@ pub fn test_primality_check_wrong_calldata_incremental_solver() {
 
 #[test]
 pub fn test_primality_check_zero_arguments() {
-    let pgm = parse_bytecode(PRIMALITY_CHECK_BYTECODE);
+    let pgm = parse_bytecode_thread_local(&PRIMALITY_CHECK_BYTECODE);
     let mut m = Machine::new(pgm);
 
     m.calldata = Rc::new(Vec::from(PRIMALITY_CHECK_FUNCTION_SELECTOR_ARR).into());
@@ -112,7 +109,7 @@ pub fn test_primality_check_zero_arguments() {
 
 #[test]
 pub fn test_primality_check_zero_arguments_incremental_solver() {
-    let pgm = parse_bytecode(PRIMALITY_CHECK_BYTECODE);
+    let pgm = parse_bytecode_thread_local(&PRIMALITY_CHECK_BYTECODE);
     let mut m = Machine::new(pgm);
 
     m.calldata = Rc::new(Vec::from(PRIMALITY_CHECK_FUNCTION_SELECTOR_ARR).into());
@@ -128,7 +125,7 @@ pub fn test_primality_check_zero_arguments_incremental_solver() {
 
 #[test]
 pub fn test_primality_check_arguments_concrete_require_fail_min() {
-    let pgm = parse_bytecode(PRIMALITY_CHECK_BYTECODE);
+    let pgm = parse_bytecode_thread_local(&PRIMALITY_CHECK_BYTECODE);
     let mut m = Machine::new(pgm);
 
     let mut calldata = Vec::from(PRIMALITY_CHECK_FUNCTION_SELECTOR_ARR);
@@ -145,7 +142,7 @@ pub fn test_primality_check_arguments_concrete_require_fail_min() {
 
 #[test]
 pub fn test_primality_check_arguments_concrete_require_fail_min_incremental_solver() {
-    let pgm = parse_bytecode(PRIMALITY_CHECK_BYTECODE);
+    let pgm = parse_bytecode_thread_local(&PRIMALITY_CHECK_BYTECODE);
     let mut m = Machine::new(pgm);
 
     let mut calldata = Vec::from(PRIMALITY_CHECK_FUNCTION_SELECTOR_ARR);
@@ -162,7 +159,7 @@ pub fn test_primality_check_arguments_concrete_require_fail_min_incremental_solv
 
 #[test]
 pub fn test_primality_check_arguments_concrete_require_fail_max() {
-    let pgm = parse_bytecode(PRIMALITY_CHECK_BYTECODE);
+    let pgm = parse_bytecode_thread_local(&PRIMALITY_CHECK_BYTECODE);
     let mut m = Machine::new(pgm);
 
     let mut arg = [0_u8; 32];
@@ -186,7 +183,7 @@ pub fn test_primality_check_arguments_concrete_require_fail_max() {
 
 #[test]
 pub fn test_primality_check_arguments_concrete_require_fail_max_incremental_solver() {
-    let pgm = parse_bytecode(PRIMALITY_CHECK_BYTECODE);
+    let pgm = parse_bytecode_thread_local(&PRIMALITY_CHECK_BYTECODE);
     let mut m = Machine::new(pgm);
 
     let mut arg = [0_u8; 32];
@@ -210,7 +207,7 @@ pub fn test_primality_check_arguments_concrete_require_fail_max_incremental_solv
 
 #[test]
 pub fn test_primality_check_arguments_concrete_assert_pass() {
-    let pgm = parse_bytecode(PRIMALITY_CHECK_BYTECODE);
+    let pgm = parse_bytecode_thread_local(&PRIMALITY_CHECK_BYTECODE);
     let mut m = Machine::new(pgm);
 
     let mut arg = [0_u8; 32];
@@ -236,7 +233,7 @@ pub fn test_primality_check_arguments_concrete_assert_pass() {
 
 #[test]
 pub fn test_primality_check_arguments_concrete_assert_pass_incremental_solver() {
-    let pgm = parse_bytecode(PRIMALITY_CHECK_BYTECODE);
+    let pgm = parse_bytecode_thread_local(&PRIMALITY_CHECK_BYTECODE);
     let mut m = Machine::new(pgm);
 
     let mut arg = [0_u8; 32];
@@ -262,7 +259,7 @@ pub fn test_primality_check_arguments_concrete_assert_pass_incremental_solver() 
 
 #[test]
 pub fn test_primality_check_arguments_concrete_assert_fail() {
-    let pgm = parse_bytecode(PRIMALITY_CHECK_BYTECODE);
+    let pgm = parse_bytecode_thread_local(&PRIMALITY_CHECK_BYTECODE);
     let mut m = Machine::new(pgm);
 
     // 953 * 1021 == 973013
@@ -297,15 +294,12 @@ pub fn test_primality_check_arguments_concrete_assert_fail() {
         }
     );
 
-    assert_eq!(
-        reverted.revert_string().unwrap(),
-        ASSERTION_FAILURE,
-    );
+    assert_eq!(reverted.revert_string().unwrap(), ASSERTION_FAILURE,);
 }
 
 #[test]
 pub fn test_primality_check_arguments_concrete_assert_fail_incremental_solver() {
-    let pgm = parse_bytecode(PRIMALITY_CHECK_BYTECODE);
+    let pgm = parse_bytecode_thread_local(&PRIMALITY_CHECK_BYTECODE);
     let mut m = Machine::new(pgm);
 
     // 953 * 1021 == 973013
@@ -340,32 +334,27 @@ pub fn test_primality_check_arguments_concrete_assert_fail_incremental_solver() 
         }
     );
 
-    assert_eq!(
-        reverted.revert_string().unwrap(),
-        ASSERTION_FAILURE,
-    );
+    assert_eq!(reverted.revert_string().unwrap(), ASSERTION_FAILURE,);
 }
 
 #[test]
 pub fn test_primality_check_arguments_symbolic() {
-     let pgm = parse_bytecode(PRIMALITY_CHECK_BYTECODE);
-     let mut m = Machine::new(pgm);
+    let pgm = parse_bytecode_thread_local(&PRIMALITY_CHECK_BYTECODE);
+    let mut m = Machine::new(pgm);
 
-     m.calldata = Rc::new(Calldata::symbolic(
-         PRIMALITY_CHECK_FUNCTION_SELECTOR_ARR,
-         64,
-     ));
+    m.calldata = Rc::new(Calldata::symbolic(
+        PRIMALITY_CHECK_FUNCTION_SELECTOR_ARR,
+        64,
+    ));
 
-     // NOTE(will) - other sym run strats take too long to execute for tests
-     let res = m.run_sym_all_branches(Some(vec![ASSERTION_FAILURE]));
+    // NOTE(will) - other sym run strats take too long to execute for tests
+    let res = m.run_sym_all_branches(Some(vec![ASSERTION_FAILURE]));
 
-     let reverted = res
-         .find_reverted(ASSERTION_FAILURE.into())
-         .unwrap();
+    let reverted = res.find_reverted(ASSERTION_FAILURE.into()).unwrap();
 
-     let byte_solutions = &reverted.solve_results.as_ref().unwrap().bytes;
+    let byte_solutions = &reverted.solve_results.as_ref().unwrap().bytes;
 
-     let concrete_calldata = reverted.calldata.solve(byte_solutions);
+    let concrete_calldata = reverted.calldata.solve(byte_solutions);
 
-     assert_eq!(concrete_calldata, "d5a2424900000000000000000000000000000000000000000000000000000000000003fd00000000000000000000000000000000000000000000000000000000000003b9");
+    assert_eq!(concrete_calldata, "d5a2424900000000000000000000000000000000000000000000000000000000000003fd00000000000000000000000000000000000000000000000000000000000003b9");
 }

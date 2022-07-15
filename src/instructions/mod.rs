@@ -6,7 +6,7 @@ use crate::{
     val::{byte::Byte, word::Word},
 };
 
-pub use convert::parse_bytecode;
+pub use convert::{parse_bytecode, parse_bytecode_thread_local};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Instruction {
