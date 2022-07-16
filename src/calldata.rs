@@ -80,8 +80,9 @@ impl Into<String> for Calldata {
                 rv.push_str("(");
                 rv.push_str(&s);
                 rv.push_str(")");
-            },
+            }
             Byte::C(x) => rv.push_str(&hex::encode(vec![x])),
+            Byte::Idx(_w, _idx) => rv.push_str("(TODO - compound expression)"),
         });
 
         rv

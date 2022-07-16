@@ -1,9 +1,12 @@
 use std::collections::HashMap;
 
 use primitive_types::U256;
-use z3::{Config, Context, ast::{Bool, BV, Ast}, Model};
+use z3::{
+    ast::{Ast, Bool, BV},
+    Config, Context, Model,
+};
 
-use crate::val::{word::Word, byte::Byte, constraint::Constraint};
+use crate::val::{byte::Byte, constraint::Constraint, word::Word};
 
 static WORD_BITVEC_SIZE: u32 = 256;
 static BYTE_BITVEC_SIZE: u32 = 8;
@@ -22,7 +25,9 @@ pub fn make_z3_config() -> Config {
 
 pub fn make_z3_constraint<'ctx>(ctx: &'ctx Context, c: &Constraint) -> Bool<'ctx> {
     match c {
-        Constraint::Eq(l, r) => make_z3_bitvec_from_word(ctx, l)._eq(&make_z3_bitvec_from_word(ctx, r)),
+        Constraint::Eq(l, r) => {
+            make_z3_bitvec_from_word(ctx, l)._eq(&make_z3_bitvec_from_word(ctx, r))
+        }
         Constraint::Neq(c) => make_z3_constraint(ctx, c).not(),
     }
 }
@@ -52,9 +57,13 @@ pub fn make_z3_bitvec_from_word<'ctx>(ctx: &'ctx Context, w: &Word) -> BV<'ctx> 
         }
         Word::S(x) => BV::new_const(&ctx, x.clone(), WORD_BITVEC_SIZE),
         Word::Add(l, r) => make_z3_bitvec_from_word(ctx, l) + make_z3_bitvec_from_word(ctx, r),
-        Word::Mul(l, r) => make_z3_bitvec_from_word(ctx, l).bvmul(&make_z3_bitvec_from_word(ctx, r)),
+        Word::Mul(l, r) => {
+            make_z3_bitvec_from_word(ctx, l).bvmul(&make_z3_bitvec_from_word(ctx, r))
+        }
         Word::Sub(l, r) => make_z3_bitvec_from_word(ctx, l) - make_z3_bitvec_from_word(ctx, r),
-        Word::Div(l, r) => make_z3_bitvec_from_word(ctx, l).bvudiv(&make_z3_bitvec_from_word(ctx, r)),
+        Word::Div(l, r) => {
+            make_z3_bitvec_from_word(ctx, l).bvudiv(&make_z3_bitvec_from_word(ctx, r))
+        }
         Word::Lt(l, r) => bool_to_bitvec(
             ctx,
             make_z3_bitvec_from_word(ctx, l).bvult(&make_z3_bitvec_from_word(ctx, r)),
@@ -70,7 +79,9 @@ pub fn make_z3_bitvec_from_word<'ctx>(ctx: &'ctx Context, w: &Word) -> BV<'ctx> 
         Word::Shr(value, shift) => {
             make_z3_bitvec_from_word(ctx, value).bvlshr(&make_z3_bitvec_from_word(ctx, shift))
         }
-        Word::BitAnd(l, r) => make_z3_bitvec_from_word(ctx, l).bvand(&make_z3_bitvec_from_word(ctx, r)),
+        Word::BitAnd(l, r) => {
+            make_z3_bitvec_from_word(ctx, l).bvand(&make_z3_bitvec_from_word(ctx, r))
+        }
         Word::Ite(q, then, xelse) => make_z3_constraint(ctx, q).ite(
             &make_z3_bitvec_from_word(ctx, then),
             &make_z3_bitvec_from_word(ctx, xelse),
@@ -87,6 +98,15 @@ pub fn make_z3_bitvec_from_byte<'ctx>(ctx: &'ctx Context, b: &Byte) -> BV<'ctx> 
     match b {
         Byte::C(x) => BV::from_u64(ctx, *x as u64, BYTE_BITVEC_SIZE),
         Byte::S(x) => BV::new_const(&ctx, x.clone(), BYTE_BITVEC_SIZE),
+        Byte::Idx(word, idx) => {
+            let indices = ByteIndices::from(*idx);
+
+            BV::extract(
+                &make_z3_bitvec_from_word(ctx, word),
+                indices.high,
+                indices.low,
+            )
+        }
     }
 }
 
@@ -130,5 +150,76 @@ pub fn make_solve_results<'ctx>(
     SolveResults {
         words: word_results,
         bytes: byte_results,
+    }
+}
+
+// Handles the conversion from byte index into indices necessary for BV::extract
+// see `test_concat_order` and `test_byte_extraction` for more details
+struct ByteIndices {
+    low: u32,
+    high: u32,
+}
+
+impl From<usize> for ByteIndices {
+    fn from(array_idx: usize) -> Self {
+        let high = 255 - 8 * array_idx;
+        let low = high - 7;
+
+        Self {
+            low: low.try_into().unwrap(),
+            high: high.try_into().unwrap(),
+        }
+    }
+}
+
+mod tests {
+    use z3::ast::{Ast, BV};
+
+    #[allow(dead_code)]
+    static BS: [u8; 32] = [
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+        25, 26, 27, 28, 29, 30, 31,
+    ];
+
+    #[test]
+    fn test_byte_extraction() {
+        let cfg = super::make_z3_config();
+        let ctx = z3::Context::new(&cfg);
+
+        let w = crate::val::word::Word::Concat(BS.map(|x| x.into()));
+
+        for i in 0..=31 {
+            let byte = crate::val::byte::Byte::Idx(Box::new(w.clone()), i);
+
+            let bv_byte = super::make_z3_bitvec_from_byte(&ctx, &byte).simplify();
+
+            let extracted_byte = bv_byte.as_u64().unwrap() as usize;
+
+            assert_eq!(i, extracted_byte);
+        }
+    }
+
+    #[test]
+    // The low byte of an array converted into a Z3 Bit vector ends up
+    // being indexed as the high byte and vice versa.
+    fn test_concat_order() {
+        let cfg = super::make_z3_config();
+        let ctx = z3::Context::new(&cfg);
+
+        let w = crate::val::word::Word::Concat(BS.map(|x| x.into()));
+
+        // #x000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+        let bv = super::make_z3_bitvec_from_word(&ctx, &w).simplify();
+
+        // #x1f
+        let high_byte_extracted = BV::extract(&bv, 7, 0).simplify();
+
+        assert_eq!(high_byte_extracted.as_u64().unwrap(), 31);
+
+        // #x00
+        let low_byte_extracted = BV::extract(&bv, 255, 248).simplify();
+
+        assert_eq!(high_byte_extracted.as_u64().unwrap(), 31);
+        assert_eq!(low_byte_extracted.as_u64().unwrap(), 0);
     }
 }

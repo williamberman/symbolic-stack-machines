@@ -1,7 +1,10 @@
+use super::word::Word;
+
 #[derive(Clone, PartialEq, Eq, Debug, Hash)]
 pub enum Byte {
     C(u8),
-    S(String)
+    S(String),
+    Idx(Box<Word>, usize)
 }
 
 pub static ZERO_BYTE: Byte = Byte::C(0);

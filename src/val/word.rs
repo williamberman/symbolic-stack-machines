@@ -157,6 +157,9 @@ impl Word {
                 Byte::S(_) => {
                     all_concrete = false;
                 }
+                Byte::Idx(_, _) => {
+                    all_concrete = false;
+                }
             }
         }
 
@@ -168,10 +171,14 @@ impl Word {
     }
 
     pub fn write_bytes(bs: &mut Vector<Byte>, idx: usize, val: Word) {
-        let u256: U256 = val.into();
-
         for i in 0..=31 {
-            bs[idx + i] = u256.byte(31 - i).into();
+            let idx_into_val = 31 - i;
+            let byte = match &val {
+                Word::C(u256) => u256.byte(idx_into_val).into(),
+                // TODO(will) - ideally these all point to the same word instead of cloning each time
+                val => Byte::Idx(Box::new(val.clone()), idx_into_val),
+            };
+            bs[idx + i] = byte;
         }
     }
 
@@ -203,7 +210,7 @@ impl Word {
                 } else {
                     Word::zero()
                 }
-            },
+            }
             (l, r) => {
                 // Structural equality check can confirm equality but does not exclude that
                 // they're not equal.
@@ -330,6 +337,9 @@ impl std::ops::Shr for Word {
                             concrete_bytes[i] = x
                         }
                         Byte::S(_) => {
+                            break;
+                        }
+                        Byte::Idx(_, _) => {
                             break;
                         }
                     }
