@@ -23,6 +23,7 @@ pub enum Word {
     Slt(Box<Word>, Box<Word>),
     Shr(Box<Word>, Box<Word>),
     BitAnd(Box<Word>, Box<Word>),
+    BitOr(Box<Word>, Box<Word>),
     Ite(Box<Constraint>, Box<Word>, Box<Word>),
     Concat([Byte; 32]),
 }
@@ -241,6 +242,13 @@ impl Word {
             }
             (l, r) => Word::Lt(Box::new(l), Box::new(r)),
         }
+    }
+
+    pub fn _lt_eq(self, other: Word) -> Word {
+        Word::BitOr(
+            Box::new(self.clone()._lt(other.clone())),
+            Box::new(self._eq(other).ite(Word::one(), Word::zero())),
+        )
     }
 
     pub fn _gt(self, other: Word) -> Word {

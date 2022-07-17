@@ -1,5 +1,5 @@
 use super::{sym_results::SymResults, Machine};
-use crate::z3::make_solve_results;
+use crate::z3::{make_solve_results, make_z3_bitvec_from_word, make_z3_bitvec_from_byte};
 use crate::z3::{make_z3_config, make_z3_constraint};
 use log::info;
 use std::time::Instant;
@@ -70,10 +70,12 @@ impl Machine {
                             } else {
                                 let model = solver.get_model().unwrap();
                                 let solve_results = make_solve_results(
-                                    &ctx,
                                     model,
                                     vec![],
-                                    m.calldata.inner().clone(),
+                                    m.calldata.inner().clone().into_iter().map(|b| {
+                                        let bv = make_z3_bitvec_from_byte(&ctx, &b);
+                                        (b, bv)
+                                    }).collect(),
                                 );
                                 m.solve_results = Some(solve_results);
                                 cur = Some(m);

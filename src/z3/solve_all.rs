@@ -1,14 +1,15 @@
 use im::Vector;
 use log::info;
-use z3::ast::Ast;
-use std::fs::File;
-use std::io::Write;
 use std::time::Instant;
-use uuid::Uuid;
+use z3::ast::{Ast, BV};
 use z3::SatResult;
 
 use crate::val::{byte::Byte, constraint::Constraint, word::Word};
-use crate::z3::common::{make_z3_config, make_z3_constraint, make_solve_results};
+use crate::z3::common::{
+    make_solve_results, make_z3_bitvec_from_byte, make_z3_config, make_z3_constraint,
+};
+use crate::z3::script_writer::Smtlib2ScriptFileWriter;
+use crate::z3::make_z3_bitvec_from_word;
 
 use super::SolveResults;
 
@@ -23,34 +24,58 @@ pub fn solve_z3_all(
     let ctx = z3::Context::new(&cfg);
     let solver = z3::Solver::new(&ctx);
 
-    let constraint_dump_file = if DUMP_CONSTRAINTS {
-        let file_name = format!("{}.smtlib2", Uuid::new_v4().to_string());
-        let file_path = std::env::temp_dir().join(file_name);
-        let f = File::create(file_path.clone()).unwrap();
-        Some((f, file_path))
+    let mut script_writer = if DUMP_CONSTRAINTS {
+        Some(Smtlib2ScriptFileWriter::new())
     } else {
         None
     };
 
+    let bytes: Vec<(Byte, BV)> = bytes
+        .into_iter()
+        .map(|b| {
+            let bv = make_z3_bitvec_from_byte(&ctx, &b);
+            if let Some(script_writer) = &mut script_writer {
+                script_writer.write_byte(&bv);
+            }
+            (b, bv)
+        })
+        .collect();
+
+    if let Some(script_writer) = &mut script_writer {
+        script_writer.write_newline();
+    }
+
+    let words: Vec<(Word, BV)> = words
+        .into_iter()
+        .map(|w| {
+            let bv = make_z3_bitvec_from_word(&ctx, &w);
+            if let Some(script_writer) = &mut script_writer {
+                script_writer.write_word(&bv);
+            }
+            (w, bv)
+        })
+        .collect();
+
+    if let Some(script_writer) = &mut script_writer {
+        script_writer.write_newline();
+    }
+
     constraints.iter().for_each(|c| {
         let z3_constraint = make_z3_constraint(&ctx, c);
         let z3_constraint_simplified = z3_constraint.simplify();
-        if let Some(mut f) = &constraint_dump_file.as_ref().map(|x| &x.0) {
-            let s = z3_constraint_simplified.to_string();
-            f.write(s.as_bytes()).unwrap();
-            // TODO(will): rust platform agnostic newline?
-            f.write("\n\n".as_bytes()).unwrap();
+        if let Some(script_writer) = &mut script_writer {
+            script_writer.write_constraint(&z3_constraint_simplified);
         };
         solver.assert(&z3_constraint_simplified);
     });
 
     let timer = Instant::now();
 
-    if let Some((_, file_path)) = constraint_dump_file {
+    if let Some(script_writer) = script_writer {
         info!(
             "solving num_constaints: {}, constraints written to: {}",
             constraints.len(),
-            file_path.to_str().unwrap()
+            script_writer.file_path.to_str().unwrap()
         );
     } else {
         info!("solving num_constaints: {}", constraints.len());
@@ -68,5 +93,5 @@ pub fn solve_z3_all(
 
     let model = solver.get_model().unwrap();
 
-    Some(make_solve_results(&ctx, model, words, bytes))
+    Some(make_solve_results(model, words, bytes))
 }

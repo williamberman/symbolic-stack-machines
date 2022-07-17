@@ -5,12 +5,17 @@ use symbolic_stack_machines::{
     calldata::Calldata,
     instructions::parse_bytecode_thread_local,
     machine::{assertions::ASSERTION_FAILURE, Machine},
-    test_data::{PRIMALITY_CHECK_BYTECODE, PRIMALITY_CHECK_FUNCTION_SELECTOR_ARR},
+    test_data::{PRIMALITY_CHECK_BYTECODE, PRIMALITY_CHECK_FUNCTION_SELECTOR_ARR, SAFE_ADD_FUNCTION_SELECTOR_ARR, SAFE_ADD_BYTECODE}, val::word::Word,
 };
 
 pub fn main() {
     env_logger::init();
 
+    primality_check_example()
+}
+
+#[allow(dead_code)]
+fn primality_check_example() {
     let pgm = parse_bytecode_thread_local(&PRIMALITY_CHECK_BYTECODE);
     let mut m = Machine::new(pgm);
 
@@ -32,4 +37,32 @@ pub fn main() {
 
     info!("symbolic_calldata: {}", symbolic_calldata_string);
     info!("concrete_calldata: {}", concrete_calldata);
+}
+
+#[allow(dead_code)]
+fn safe_add_example() {
+    let pgm = parse_bytecode_thread_local(&SAFE_ADD_BYTECODE);
+
+    let mut m = Machine::new(pgm);
+
+    m.calldata = Rc::new(Calldata::symbolic(
+        SAFE_ADD_FUNCTION_SELECTOR_ARR,
+        64,
+    ));
+
+    let x = m.calldata.read_word(4.into());
+    let y = m.calldata.read_word(36.into());
+
+    m.constraints.push_back(x.clone()._lt_eq(x.clone() + y.clone())._eq(Word::one()));
+    m.constraints.push_back(x.clone()._eq(y.clone()));
+
+    let res = m.run_sym(None);
+
+    dbg!(res.leaves.len());
+    dbg!(res.pruned.len());
+
+    let returned = res.leaves.get(0).unwrap();
+
+    dbg!(returned.return_string());
+    dbg!(returned.revert_string());
 }

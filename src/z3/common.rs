@@ -82,6 +82,9 @@ pub fn make_z3_bitvec_from_word<'ctx>(ctx: &'ctx Context, w: &Word) -> BV<'ctx> 
         Word::BitAnd(l, r) => {
             make_z3_bitvec_from_word(ctx, l).bvand(&make_z3_bitvec_from_word(ctx, r))
         }
+        Word::BitOr(l, r) => {
+            make_z3_bitvec_from_word(ctx, l).bvor(&make_z3_bitvec_from_word(ctx, r))
+        }
         Word::Ite(q, then, xelse) => make_z3_constraint(ctx, q).ite(
             &make_z3_bitvec_from_word(ctx, then),
             &make_z3_bitvec_from_word(ctx, xelse),
@@ -118,17 +121,16 @@ pub fn bool_to_bitvec<'ctx>(ctx: &'ctx Context, bool: Bool<'ctx>) -> BV<'ctx> {
 }
 
 pub fn make_solve_results<'ctx>(
-    ctx: &'ctx Context,
     model: Model,
-    words: Vec<Word>,
-    bytes: Vec<Byte>,
+    words: Vec<(Word, BV<'ctx>)>,
+    bytes: Vec<(Byte, BV<'ctx>)>,
 ) -> SolveResults {
     let mut word_results: HashMap<Word, U256> = HashMap::new();
 
-    words.iter().for_each(|w| {
+    words.iter().for_each(|(w, bv)| {
         // TODO Handle larger than u64
         let word_result = model
-            .eval(&make_z3_bitvec_from_word(&ctx, w), true)
+            .eval(bv, true)
             .unwrap()
             .as_u64()
             .unwrap();
@@ -137,9 +139,9 @@ pub fn make_solve_results<'ctx>(
 
     let mut byte_results = HashMap::new();
 
-    bytes.iter().for_each(|b| {
+    bytes.iter().for_each(|(b, bv)| {
         let byte_result = model
-            .eval(&make_z3_bitvec_from_byte(&ctx, b), true)
+            .eval(bv, true)
             .unwrap()
             .as_u64()
             .unwrap();
