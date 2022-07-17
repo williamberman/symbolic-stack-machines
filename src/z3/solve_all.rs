@@ -33,7 +33,7 @@ pub fn solve_z3_all(
     let bytes: Vec<(Byte, BV)> = bytes
         .into_iter()
         .map(|b| {
-            let bv = make_z3_bitvec_from_byte(&ctx, &b);
+            let bv = make_z3_bitvec_from_byte(&ctx, &b, &None);
 
             // Only write symbolic bytes
             match &b {
@@ -56,7 +56,7 @@ pub fn solve_z3_all(
     let words: Vec<(Word, BV)> = words
         .into_iter()
         .map(|w| {
-            let bv = make_z3_bitvec_from_word(&ctx, &w);
+            let bv = make_z3_bitvec_from_word(&ctx, &w, &None);
             if let Some(script_writer) = &mut script_writer {
                 script_writer.write_word(&bv);
             }
@@ -69,13 +69,16 @@ pub fn solve_z3_all(
     }
 
     constraints.iter().for_each(|c| {
-        let z3_constraint = make_z3_constraint(&ctx, c);
-        let z3_constraint_simplified = z3_constraint.simplify();
-        if let Some(script_writer) = &mut script_writer {
-            script_writer.write_constraint(&z3_constraint_simplified);
-        };
-        solver.assert(&z3_constraint_simplified);
+        let z3_constraint = make_z3_constraint(&ctx, c, &None).simplify();
+        solver.assert(&z3_constraint);
     });
+
+    if let Some(script_writer) = &mut script_writer {
+        constraints.iter().for_each(|c| {
+            let z3_constraint = make_z3_constraint(&ctx, c, &None).simplify();
+            script_writer.write_constraint(&z3_constraint);
+        });
+    }
 
     let timer = Instant::now();
 

@@ -50,6 +50,7 @@ impl Machine {
                             let z3_constraint = make_z3_constraint(
                                 &ctx,
                                 m.constraints.get(m.constraints.len() - 1).unwrap(),
+                                &None
                             );
 
                             solver.assert(&z3_constraint);
@@ -73,7 +74,7 @@ impl Machine {
                                     model,
                                     vec![],
                                     m.calldata.inner().clone().into_iter().map(|b| {
-                                        let bv = make_z3_bitvec_from_byte(&ctx, &b);
+                                        let bv = make_z3_bitvec_from_byte(&ctx, &b, &None);
                                         (b, bv)
                                     }).collect(),
                                 );

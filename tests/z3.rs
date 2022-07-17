@@ -17,7 +17,7 @@ pub fn test_constant_conversion() {
     ])
     .into();
 
-    let bv = make_z3_bitvec_from_word(&ctx, &w);
+    let bv = make_z3_bitvec_from_word(&ctx, &w, &None);
 
     assert_eq!(solver.check(), SatResult::Sat);
 

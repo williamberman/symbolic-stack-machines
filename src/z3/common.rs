@@ -23,16 +23,29 @@ pub fn make_z3_config() -> Config {
     cfg
 }
 
-pub fn make_z3_constraint<'ctx>(ctx: &'ctx Context, c: &Constraint) -> Bool<'ctx> {
+pub fn make_z3_constraint<'ctx>(
+    ctx: &'ctx Context,
+    c: &Constraint,
+    variables: &Option<HashMap<Word, String>>,
+) -> Bool<'ctx> {
     match c {
-        Constraint::Eq(l, r) => {
-            make_z3_bitvec_from_word(ctx, l)._eq(&make_z3_bitvec_from_word(ctx, r))
-        }
-        Constraint::Neq(c) => make_z3_constraint(ctx, c).not(),
+        Constraint::Eq(l, r) => make_z3_bitvec_from_word(ctx, l, variables)
+            ._eq(&make_z3_bitvec_from_word(ctx, r, variables)),
+        Constraint::Neq(c) => make_z3_constraint(ctx, c, variables).not(),
     }
 }
 
-pub fn make_z3_bitvec_from_word<'ctx>(ctx: &'ctx Context, w: &Word) -> BV<'ctx> {
+pub fn make_z3_bitvec_from_word<'ctx>(
+    ctx: &'ctx Context,
+    w: &Word,
+    variables: &Option<HashMap<Word, String>>,
+) -> BV<'ctx> {
+    if let Some(variables) = variables {
+        if let Some(variable) = variables.get(w) {
+            return BV::new_const(ctx, variable.clone(), WORD_BITVEC_SIZE)
+        }
+    }
+
     match w {
         Word::C(c) => {
             // TODO(will) - this looks like it's the current best way to construct a constant
@@ -56,48 +69,56 @@ pub fn make_z3_bitvec_from_word<'ctx>(ctx: &'ctx Context, w: &Word) -> BV<'ctx> 
                 .simplify()
         }
         Word::S(x) => BV::new_const(&ctx, x.clone(), WORD_BITVEC_SIZE),
-        Word::Add(l, r) => make_z3_bitvec_from_word(ctx, l) + make_z3_bitvec_from_word(ctx, r),
-        Word::Mul(l, r) => {
-            make_z3_bitvec_from_word(ctx, l).bvmul(&make_z3_bitvec_from_word(ctx, r))
+        Word::Add(l, r) => {
+            make_z3_bitvec_from_word(ctx, l, variables)
+                + make_z3_bitvec_from_word(ctx, r, variables)
         }
-        Word::Sub(l, r) => make_z3_bitvec_from_word(ctx, l) - make_z3_bitvec_from_word(ctx, r),
-        Word::Div(l, r) => {
-            make_z3_bitvec_from_word(ctx, l).bvudiv(&make_z3_bitvec_from_word(ctx, r))
+        Word::Mul(l, r) => make_z3_bitvec_from_word(ctx, l, variables)
+            .bvmul(&make_z3_bitvec_from_word(ctx, r, variables)),
+        Word::Sub(l, r) => {
+            make_z3_bitvec_from_word(ctx, l, variables)
+                - make_z3_bitvec_from_word(ctx, r, variables)
         }
+        Word::Div(l, r) => make_z3_bitvec_from_word(ctx, l, variables)
+            .bvudiv(&make_z3_bitvec_from_word(ctx, r, variables)),
         Word::Lt(l, r) => bool_to_bitvec(
             ctx,
-            make_z3_bitvec_from_word(ctx, l).bvult(&make_z3_bitvec_from_word(ctx, r)),
+            make_z3_bitvec_from_word(ctx, l, variables)
+                .bvult(&make_z3_bitvec_from_word(ctx, r, variables)),
         ),
         Word::Gt(l, r) => bool_to_bitvec(
             ctx,
-            make_z3_bitvec_from_word(ctx, l).bvugt(&make_z3_bitvec_from_word(ctx, r)),
+            make_z3_bitvec_from_word(ctx, l, variables)
+                .bvugt(&make_z3_bitvec_from_word(ctx, r, variables)),
         ),
         Word::Slt(l, r) => bool_to_bitvec(
             ctx,
-            make_z3_bitvec_from_word(ctx, l).bvslt(&make_z3_bitvec_from_word(ctx, r)),
+            make_z3_bitvec_from_word(ctx, l, variables)
+                .bvslt(&make_z3_bitvec_from_word(ctx, r, variables)),
         ),
-        Word::Shr(value, shift) => {
-            make_z3_bitvec_from_word(ctx, value).bvlshr(&make_z3_bitvec_from_word(ctx, shift))
-        }
-        Word::BitAnd(l, r) => {
-            make_z3_bitvec_from_word(ctx, l).bvand(&make_z3_bitvec_from_word(ctx, r))
-        }
-        Word::BitOr(l, r) => {
-            make_z3_bitvec_from_word(ctx, l).bvor(&make_z3_bitvec_from_word(ctx, r))
-        }
-        Word::Ite(q, then, xelse) => make_z3_constraint(ctx, q).ite(
-            &make_z3_bitvec_from_word(ctx, then),
-            &make_z3_bitvec_from_word(ctx, xelse),
+        Word::Shr(value, shift) => make_z3_bitvec_from_word(ctx, value, variables)
+            .bvlshr(&make_z3_bitvec_from_word(ctx, shift, variables)),
+        Word::BitAnd(l, r) => make_z3_bitvec_from_word(ctx, l, variables)
+            .bvand(&make_z3_bitvec_from_word(ctx, r, variables)),
+        Word::BitOr(l, r) => make_z3_bitvec_from_word(ctx, l, variables)
+            .bvor(&make_z3_bitvec_from_word(ctx, r, variables)),
+        Word::Ite(q, then, xelse) => make_z3_constraint(ctx, q, variables).ite(
+            &make_z3_bitvec_from_word(ctx, then, variables),
+            &make_z3_bitvec_from_word(ctx, xelse, variables),
         ),
         Word::Concat(x) => x
             .iter()
-            .map(|b| make_z3_bitvec_from_byte(ctx, b))
+            .map(|b| make_z3_bitvec_from_byte(ctx, b, variables))
             .reduce(|l, r| l.concat(&r))
             .unwrap(),
     }
 }
 
-pub fn make_z3_bitvec_from_byte<'ctx>(ctx: &'ctx Context, b: &Byte) -> BV<'ctx> {
+pub fn make_z3_bitvec_from_byte<'ctx>(
+    ctx: &'ctx Context,
+    b: &Byte,
+    variables: &Option<HashMap<Word, String>>,
+) -> BV<'ctx> {
     match b {
         Byte::C(x) => BV::from_u64(ctx, *x as u64, BYTE_BITVEC_SIZE),
         Byte::S(x) => BV::new_const(&ctx, x.clone(), BYTE_BITVEC_SIZE),
@@ -105,7 +126,7 @@ pub fn make_z3_bitvec_from_byte<'ctx>(ctx: &'ctx Context, b: &Byte) -> BV<'ctx> 
             let indices = ByteIndices::from(*idx);
 
             BV::extract(
-                &make_z3_bitvec_from_word(ctx, word),
+                &make_z3_bitvec_from_word(ctx, word, variables),
                 indices.high,
                 indices.low,
             )
@@ -129,22 +150,14 @@ pub fn make_solve_results<'ctx>(
 
     words.iter().for_each(|(w, bv)| {
         // TODO Handle larger than u64
-        let word_result = model
-            .eval(bv, true)
-            .unwrap()
-            .as_u64()
-            .unwrap();
+        let word_result = model.eval(bv, true).unwrap().as_u64().unwrap();
         word_results.insert(w.clone(), word_result.into());
     });
 
     let mut byte_results = HashMap::new();
 
     bytes.iter().for_each(|(b, bv)| {
-        let byte_result = model
-            .eval(bv, true)
-            .unwrap()
-            .as_u64()
-            .unwrap();
+        let byte_result = model.eval(bv, true).unwrap().as_u64().unwrap();
 
         byte_results.insert(b.clone(), byte_result as u8);
     });
@@ -193,7 +206,7 @@ mod tests {
         for i in 0..=31 {
             let byte = crate::val::byte::Byte::Idx(Box::new(w.clone()), i);
 
-            let bv_byte = super::make_z3_bitvec_from_byte(&ctx, &byte).simplify();
+            let bv_byte = super::make_z3_bitvec_from_byte(&ctx, &byte, &None).simplify();
 
             let extracted_byte = bv_byte.as_u64().unwrap() as usize;
 
@@ -211,7 +224,7 @@ mod tests {
         let w = crate::val::word::Word::Concat(BS.map(|x| x.into()));
 
         // #x000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
-        let bv = super::make_z3_bitvec_from_word(&ctx, &w).simplify();
+        let bv = super::make_z3_bitvec_from_word(&ctx, &w, &None).simplify();
 
         // #x1f
         let high_byte_extracted = BV::extract(&bv, 7, 0).simplify();
