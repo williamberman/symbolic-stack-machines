@@ -35,12 +35,12 @@ impl Smtlib2ScriptFileWriter {
     }
 
     pub fn write_byte<'ctx>(&mut self, b: &BV<'ctx>) {
-        let s = format!("(define-fun {} () (_ BitVec 8))\n", b.to_string());
+        let s = format!("(declare-fun {} () (_ BitVec 8))\n", b.to_string());
         self.f.write(s.as_bytes()).unwrap();
     }
 
     pub fn write_word<'ctx>(&mut self, w: &BV<'ctx>) {
-        let s = format!("(define-fun {} () (_ BitVec 256))\n", w.to_string());
+        let s = format!("(declare-fun {} () (_ BitVec 256))\n", w.to_string());
         self.f.write(s.as_bytes()).unwrap();
     }
 

@@ -8,8 +8,8 @@ use crate::val::{byte::Byte, constraint::Constraint, word::Word};
 use crate::z3::common::{
     make_solve_results, make_z3_bitvec_from_byte, make_z3_config, make_z3_constraint,
 };
-use crate::z3::script_writer::Smtlib2ScriptFileWriter;
 use crate::z3::make_z3_bitvec_from_word;
+use crate::z3::script_writer::Smtlib2ScriptFileWriter;
 
 use super::SolveResults;
 
@@ -34,9 +34,17 @@ pub fn solve_z3_all(
         .into_iter()
         .map(|b| {
             let bv = make_z3_bitvec_from_byte(&ctx, &b);
-            if let Some(script_writer) = &mut script_writer {
-                script_writer.write_byte(&bv);
+
+            // Only write symbolic bytes
+            match &b {
+                Byte::S(_) => {
+                    if let Some(script_writer) = &mut script_writer {
+                        script_writer.write_byte(&bv);
+                    }
+                }
+                _ => {}
             }
+
             (b, bv)
         })
         .collect();

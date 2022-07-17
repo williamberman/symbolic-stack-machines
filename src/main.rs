@@ -11,7 +11,7 @@ use symbolic_stack_machines::{
 pub fn main() {
     env_logger::init();
 
-    primality_check_example()
+    safe_add_example();
 }
 
 #[allow(dead_code)]
