@@ -15,7 +15,8 @@ use symbolic_stack_machines::{
 pub fn main() {
     env_logger::init();
 
-    safe_add_example();
+    // safe_add_example();
+    primality_check_example();
 }
 
 #[allow(dead_code)]
@@ -23,13 +24,13 @@ fn primality_check_example() {
     let pgm = parse_bytecode_thread_local(&PRIMALITY_CHECK_BYTECODE);
     let mut m = Machine::new(pgm);
 
-    let symbolic_calldata = Calldata::symbolic(PRIMALITY_CHECK_FUNCTION_SELECTOR_ARR, 64);
+    let mut calldata = Calldata::symbolic(PRIMALITY_CHECK_FUNCTION_SELECTOR_ARR, 64);
+    calldata.vars = Some(vec![("x".into(), 4), ("y".into(), 36)]);
 
-    let symbolic_calldata_string = Into::<String>::into(symbolic_calldata.clone());
+    let calldata_s = Into::<String>::into(calldata.clone());
+    info!("symbolic_calldata: {}", calldata_s);
 
-    info!("symbolic_calldata: {}", symbolic_calldata_string);
-
-    m.calldata = Rc::new(symbolic_calldata);
+    m.calldata = Rc::new(calldata);
 
     let res = m.run_sym(Some(vec![ASSERTION_FAILURE]));
 
@@ -39,7 +40,7 @@ fn primality_check_example() {
 
     let concrete_calldata = reverted.calldata.solve(byte_solutions);
 
-    info!("symbolic_calldata: {}", symbolic_calldata_string);
+    info!("symbolic_calldata: {}", calldata_s);
     info!("concrete_calldata: {}", concrete_calldata);
 }
 
