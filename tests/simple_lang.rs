@@ -100,7 +100,7 @@ fn test_symbolic_multiple_machines() {
 
     assert_eq!(no_take_jump.stack.peek().unwrap(), &Word::from(100));
 
-    let take_jump_sol = solve_z3_all(&take_jump.constraints, vec![], vec!["x".into()]).unwrap();
+    let take_jump_sol = solve_z3_all(&take_jump.constraints, vec![], vec!["x".into()], &HashMap::new()).unwrap();
 
     assert_eq!(
         take_jump_sol,
@@ -110,7 +110,7 @@ fn test_symbolic_multiple_machines() {
         }
     );
 
-    let no_take_jump_sol = solve_z3_all(&no_take_jump.constraints, vec![], vec!["x".into()]).unwrap();
+    let no_take_jump_sol = solve_z3_all(&no_take_jump.constraints, vec![], vec!["x".into()], &HashMap::new()).unwrap();
 
     assert_eq!(
         no_take_jump_sol,

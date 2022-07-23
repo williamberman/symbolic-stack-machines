@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use primitive_types::U256;
 use symbolic_stack_machines::{
     val::word::Word,
@@ -17,7 +19,7 @@ pub fn test_constant_conversion() {
     ])
     .into();
 
-    let bv = make_z3_bitvec_from_word(&ctx, &w, &None);
+    let bv = make_z3_bitvec_from_word(&ctx, &w, &HashMap::new());
 
     assert_eq!(solver.check(), SatResult::Sat);
 
