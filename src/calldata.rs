@@ -51,6 +51,23 @@ impl Calldata {
         calldata.into()
     }
 
+    pub fn symbolic_vars(function_selector: [u8; 4], vars: Vec<(String, usize)>) -> Self {
+        // If only function selector
+        let mut n_symbolic_bytes = 0;
+
+        vars.iter().for_each(|(_, start_idx)| {
+            let max_symbolic_bytes = start_idx + 32 - 4;
+
+            if max_symbolic_bytes > n_symbolic_bytes {
+                n_symbolic_bytes = max_symbolic_bytes
+            }
+        });
+
+        let mut rv = Self::symbolic(function_selector, n_symbolic_bytes.try_into().unwrap());
+        rv.vars = Some(vars);
+        rv
+    }
+
     pub fn inner(&self) -> &Vec<Byte> {
         &self.inner
     }

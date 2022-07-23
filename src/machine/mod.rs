@@ -1,5 +1,6 @@
 pub mod assertions;
 pub mod mem_ptr;
+pub mod check_post_condition;
 mod run_sym_inc;
 mod run_sym_solve_at_each_branch;
 mod run_sym_solve_at_end;
@@ -138,6 +139,13 @@ impl Machine {
         self.return_ptr.clone().map(|ptr| self.mem_ptr_bytes(ptr))
     }
 
+    pub fn return_word(&self) -> Option<Word> {
+        self.return_bytes().map(|bs| {
+            let arr: [Byte; 32] = bs.try_into().unwrap();
+            Word::from(arr)
+        })
+    }
+
     pub fn return_string(&self) -> Option<String> {
         self.return_ptr.clone().map(|ptr| self.mem_ptr_string(ptr))
     }
@@ -154,5 +162,9 @@ impl Machine {
 
     fn variables(&self) -> HashMap<Word, String> {
         self.calldata.variables_word_lookup()
+    }
+
+    pub fn returned(&self) -> bool {
+        self.return_ptr.is_some()
     }
 }

@@ -399,6 +399,12 @@ impl std::ops::BitAnd for Word {
     }
 }
 
+impl Into<Constraint> for Word {
+    fn into(self) -> Constraint {
+        self._eq(Word::one())
+    }
+}
+
 mod tests {
     #[allow(dead_code)]
     static BS: [u8; 51] = [
