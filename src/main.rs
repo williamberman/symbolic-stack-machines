@@ -5,7 +5,11 @@ use symbolic_stack_machines::{
     calldata::Calldata,
     instructions::parse_bytecode_thread_local,
     machine::{assertions::ASSERTION_FAILURE, Machine},
-    test_data::{PRIMALITY_CHECK_BYTECODE, PRIMALITY_CHECK_FUNCTION_SELECTOR_ARR, SAFE_ADD_FUNCTION_SELECTOR_ARR, SAFE_ADD_BYTECODE}, val::word::Word,
+    test_data::{
+        PRIMALITY_CHECK_BYTECODE, PRIMALITY_CHECK_FUNCTION_SELECTOR_ARR, SAFE_ADD_BYTECODE,
+        SAFE_ADD_FUNCTION_SELECTOR_ARR,
+    },
+    val::word::Word,
 };
 
 pub fn main() {
@@ -45,15 +49,19 @@ fn safe_add_example() {
 
     let mut m = Machine::new(pgm);
 
-    m.calldata = Rc::new(Calldata::symbolic(
-        SAFE_ADD_FUNCTION_SELECTOR_ARR,
-        64,
-    ));
+    let mut calldata = Calldata::symbolic(SAFE_ADD_FUNCTION_SELECTOR_ARR, 64);
 
-    let x = m.calldata.read_word(4.into());
-    let y = m.calldata.read_word(36.into());
+    calldata.vars = Some(vec![("x".into(), 4), ("y".into(), 36)]);
 
-    m.constraints.push_back(x.clone()._lt_eq(x.clone() + y.clone())._eq(Word::one()));
+    m.calldata = Rc::new(calldata);
+
+    let vars = m.calldata.variables_name_lookup();
+
+    let x = vars.get("x").unwrap();
+    let y = vars.get("y").unwrap();
+
+    m.constraints
+        .push_back(x.clone()._lt_eq(x.clone() + y.clone())._eq(Word::one()));
     m.constraints.push_back(x.clone()._eq(y.clone()));
 
     let res = m.run_sym(None);

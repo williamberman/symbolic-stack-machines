@@ -26,7 +26,7 @@ pub fn make_z3_config() -> Config {
 pub fn make_z3_constraint<'ctx>(
     ctx: &'ctx Context,
     c: &Constraint,
-    variables: &Option<HashMap<Word, String>>,
+    variables: &HashMap<Word, String>,
 ) -> Bool<'ctx> {
     match c {
         Constraint::Eq(l, r) => make_z3_bitvec_from_word(ctx, l, variables)
@@ -38,12 +38,10 @@ pub fn make_z3_constraint<'ctx>(
 pub fn make_z3_bitvec_from_word<'ctx>(
     ctx: &'ctx Context,
     w: &Word,
-    variables: &Option<HashMap<Word, String>>,
+    variables: &HashMap<Word, String>,
 ) -> BV<'ctx> {
-    if let Some(variables) = variables {
-        if let Some(variable) = variables.get(w) {
-            return BV::new_const(ctx, variable.clone(), WORD_BITVEC_SIZE)
-        }
+    if let Some(variable) = variables.get(w) {
+        return BV::new_const(ctx, variable.clone(), WORD_BITVEC_SIZE);
     }
 
     match w {
@@ -117,7 +115,7 @@ pub fn make_z3_bitvec_from_word<'ctx>(
 pub fn make_z3_bitvec_from_byte<'ctx>(
     ctx: &'ctx Context,
     b: &Byte,
-    variables: &Option<HashMap<Word, String>>,
+    variables: &HashMap<Word, String>,
 ) -> BV<'ctx> {
     match b {
         Byte::C(x) => BV::from_u64(ctx, *x as u64, BYTE_BITVEC_SIZE),
@@ -188,6 +186,8 @@ impl From<usize> for ByteIndices {
 }
 
 mod tests {
+    use std::collections::HashMap;
+
     use z3::ast::{Ast, BV};
 
     #[allow(dead_code)]
@@ -206,7 +206,7 @@ mod tests {
         for i in 0..=31 {
             let byte = crate::val::byte::Byte::Idx(Box::new(w.clone()), i);
 
-            let bv_byte = super::make_z3_bitvec_from_byte(&ctx, &byte, &None).simplify();
+            let bv_byte = super::make_z3_bitvec_from_byte(&ctx, &byte, &HashMap::new()).simplify();
 
             let extracted_byte = bv_byte.as_u64().unwrap() as usize;
 
@@ -224,7 +224,7 @@ mod tests {
         let w = crate::val::word::Word::Concat(BS.map(|x| x.into()));
 
         // #x000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
-        let bv = super::make_z3_bitvec_from_word(&ctx, &w, &None).simplify();
+        let bv = super::make_z3_bitvec_from_word(&ctx, &w, &HashMap::new()).simplify();
 
         // #x1f
         let high_byte_extracted = BV::extract(&bv, 7, 0).simplify();

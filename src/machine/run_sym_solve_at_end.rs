@@ -39,7 +39,7 @@ impl Machine {
             .for_each(|mut m| match m.revert_string() {
                 Some(r) => {
                     if assertions.contains(&r.as_str()) {
-                        match solve_z3_all(&m.constraints, vec![], m.calldata.inner().clone()) {
+                        match solve_z3_all(&m.constraints, vec![], m.calldata.inner().clone(), &m.variables()) {
                             Some(solve_results) => {
                                 m.solve_results = Some(solve_results);
                                 leaves.push(m);

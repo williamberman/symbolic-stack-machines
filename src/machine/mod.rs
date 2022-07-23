@@ -1,11 +1,12 @@
+pub mod assertions;
 pub mod mem_ptr;
 mod run_sym_inc;
 mod run_sym_solve_at_each_branch;
 mod run_sym_solve_at_end;
 mod sym_results;
-pub mod assertions;
 
 use std::{
+    collections::HashMap,
     rc::Rc,
     sync::{
         atomic::{AtomicUsize, Ordering},
@@ -149,5 +150,9 @@ impl Machine {
         let bytes = self.mem_ptr_bytes(ptr);
         let bs: Vec<u8> = bytes.into_iter().map(|x| x.into()).collect();
         hex::encode(bs)
+    }
+
+    fn variables(&self) -> HashMap<Word, String> {
+        self.calldata.variables_word_lookup()
     }
 }

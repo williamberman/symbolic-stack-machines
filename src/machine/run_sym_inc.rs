@@ -1,5 +1,5 @@
 use super::{sym_results::SymResults, Machine};
-use crate::z3::{make_solve_results, make_z3_bitvec_from_word, make_z3_bitvec_from_byte};
+use crate::z3::{make_solve_results, make_z3_bitvec_from_byte};
 use crate::z3::{make_z3_config, make_z3_constraint};
 use log::info;
 use std::time::Instant;
@@ -50,7 +50,7 @@ impl Machine {
                             let z3_constraint = make_z3_constraint(
                                 &ctx,
                                 m.constraints.get(m.constraints.len() - 1).unwrap(),
-                                &None
+                                &m.variables()
                             );
 
                             solver.assert(&z3_constraint);
@@ -74,7 +74,7 @@ impl Machine {
                                     model,
                                     vec![],
                                     m.calldata.inner().clone().into_iter().map(|b| {
-                                        let bv = make_z3_bitvec_from_byte(&ctx, &b, &None);
+                                        let bv = make_z3_bitvec_from_byte(&ctx, &b, &m.variables());
                                         (b, bv)
                                     }).collect(),
                                 );

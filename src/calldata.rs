@@ -8,11 +8,16 @@ use crate::val::{
 #[derive(Default, Clone, Debug, PartialEq, Eq)]
 pub struct Calldata {
     inner: Vec<Byte>,
+    // Variable name -> offset word read out of
+    pub vars: Option<Vec<(String, usize)>>,
 }
 
 impl Calldata {
     pub fn new(data: Vec<Byte>) -> Self {
-        Self { inner: data }
+        Self {
+            inner: data,
+            vars: None,
+        }
     }
 
     pub fn size(&self) -> Word {
@@ -20,8 +25,11 @@ impl Calldata {
     }
 
     pub fn read_word(&self, idx: Word) -> Word {
-        let idx_unwrapped: usize = idx.into();
-        Word::from_bytes_vec(&self.inner, idx_unwrapped, BYTES_IN_WORD, true)
+        self.read_word_concrete(idx.into())
+    }
+
+    pub fn read_word_concrete(&self, idx: usize) -> Word {
+        Word::from_bytes_vec(&self.inner, idx, BYTES_IN_WORD, true)
     }
 
     // TODO(will) - n_symbolic_bytes should be usize
@@ -55,6 +63,30 @@ impl Calldata {
             .collect();
 
         hex::encode(concrete_calldata)
+    }
+
+    pub fn variables(&self) -> Vec<(String, Word)> {
+        match &self.vars {
+            Some(d) => d
+                .iter()
+                .map(|(variable_name, offset)| {
+                    let word = self.read_word_concrete(*offset);
+                    (variable_name.clone(), word)
+                })
+                .collect(),
+            None => vec![],
+        }
+    }
+
+    pub fn variables_name_lookup(&self) -> HashMap<String, Word> {
+        self.variables().into_iter().collect()
+    }
+
+    pub fn variables_word_lookup(&self) -> HashMap<Word, String> {
+        self.variables()
+            .into_iter()
+            .map(|(variable_name, word)| (word, variable_name))
+            .collect()
     }
 }
 

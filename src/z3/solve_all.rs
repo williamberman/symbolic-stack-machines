@@ -1,5 +1,6 @@
 use im::Vector;
 use log::info;
+use std::collections::HashMap;
 use std::time::Instant;
 use z3::ast::{Ast, BV};
 use z3::SatResult;
@@ -9,7 +10,7 @@ use crate::z3::common::{
     make_solve_results, make_z3_bitvec_from_byte, make_z3_config, make_z3_constraint,
 };
 use crate::z3::make_z3_bitvec_from_word;
-use crate::z3::script_writer::Smtlib2ScriptFileWriter;
+use crate::z3::script_writer::write_script;
 
 use super::SolveResults;
 
@@ -19,78 +20,40 @@ pub fn solve_z3_all(
     constraints: &Vector<Constraint>,
     words: Vec<Word>,
     bytes: Vec<Byte>,
+    variables: &HashMap<Word, String>
 ) -> Option<SolveResults> {
     let cfg = make_z3_config();
     let ctx = z3::Context::new(&cfg);
     let solver = z3::Solver::new(&ctx);
 
-    let mut script_writer = if DUMP_CONSTRAINTS {
-        Some(Smtlib2ScriptFileWriter::new())
-    } else {
-        None
-    };
+    if DUMP_CONSTRAINTS {
+        write_script(&ctx, constraints, &words, &bytes, variables)
+    }
 
     let bytes: Vec<(Byte, BV)> = bytes
         .into_iter()
         .map(|b| {
-            let bv = make_z3_bitvec_from_byte(&ctx, &b, &None);
-
-            // Only write symbolic bytes
-            match &b {
-                Byte::S(_) => {
-                    if let Some(script_writer) = &mut script_writer {
-                        script_writer.write_byte(&bv);
-                    }
-                }
-                _ => {}
-            }
-
+            let bv = make_z3_bitvec_from_byte(&ctx, &b, variables);
             (b, bv)
         })
         .collect();
 
-    if let Some(script_writer) = &mut script_writer {
-        script_writer.write_newline();
-    }
-
     let words: Vec<(Word, BV)> = words
         .into_iter()
         .map(|w| {
-            let bv = make_z3_bitvec_from_word(&ctx, &w, &None);
-            if let Some(script_writer) = &mut script_writer {
-                script_writer.write_word(&bv);
-            }
+            let bv = make_z3_bitvec_from_word(&ctx, &w, variables);
             (w, bv)
         })
         .collect();
 
-    if let Some(script_writer) = &mut script_writer {
-        script_writer.write_newline();
-    }
-
     constraints.iter().for_each(|c| {
-        let z3_constraint = make_z3_constraint(&ctx, c, &None).simplify();
+        let z3_constraint = make_z3_constraint(&ctx, c, variables).simplify();
         solver.assert(&z3_constraint);
     });
 
-    if let Some(script_writer) = &mut script_writer {
-        constraints.iter().for_each(|c| {
-            let z3_constraint = make_z3_constraint(&ctx, c, &None).simplify();
-            script_writer.write_constraint(&z3_constraint);
-        });
-    }
-
     let timer = Instant::now();
 
-    if let Some(script_writer) = script_writer {
-        info!(
-            "solving num_constaints: {}, constraints written to: {}",
-            constraints.len(),
-            script_writer.file_path.to_str().unwrap()
-        );
-    } else {
-        info!("solving num_constaints: {}", constraints.len());
-    };
+    info!("solving num_constaints: {}", constraints.len());
 
     let solver_res = solver.check();
 

@@ -63,7 +63,7 @@ impl SymResultsWithSolver {
 
     pub fn push(&mut self, mut m: Machine, constraint_solve: bool) {
         if constraint_solve && !m.constraints.is_empty() {
-            match solve_z3_all(&m.constraints, vec![], m.calldata.inner().clone()) {
+            match solve_z3_all(&m.constraints, vec![], m.calldata.inner().clone(), &m.variables()) {
                 Some(sr) => {
                     m.solve_results = Some(sr);
                     self.push_inner(m);
