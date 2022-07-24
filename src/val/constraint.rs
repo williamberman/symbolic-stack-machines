@@ -42,7 +42,11 @@ impl Constraint {
                         xelse,
                     )
                 }
-                (l, r) => Word::Ite(Box::new(Constraint::Eq(Box::new(l), Box::new(r))), Box::new(then), Box::new(xelse)),
+                (l, r) => Word::Ite(
+                    Box::new(Constraint::Eq(Box::new(l), Box::new(r))),
+                    Box::new(then),
+                    Box::new(xelse),
+                ),
             },
             xself => Word::Ite(Box::new(xself), Box::new(then), Box::new(xelse)),
         }
@@ -68,7 +72,11 @@ fn nested_ite_term_rewrite(
     //  ->      (ite inner_cond inner_then inner_else)
     if inner_then == equality_check && inner_then == outer_then && inner_else == outer_else {
         info!("applying nop nested ite term");
-        return Word::Ite(Box::new(inner_cond), Box::new(inner_then), Box::new(inner_else))
+        return Word::Ite(
+            Box::new(inner_cond),
+            Box::new(inner_then),
+            Box::new(inner_else),
+        );
     }
 
     // Term re-writing a compound expression that flips `then` and `else`
@@ -78,10 +86,15 @@ fn nested_ite_term_rewrite(
     //
     // (ite (= (ite inner_cond inner_then inner_else) inner_else) inner_then inner_else )
     //  ->      (ite inner_cond inner_else inner_then)
-    if (inner_then == equality_check && inner_then == outer_else && inner_else == outer_then) ||
-        (inner_else == equality_check && inner_then == outer_then && inner_else == outer_else) {
+    if (inner_then == equality_check && inner_then == outer_else && inner_else == outer_then)
+        || (inner_else == equality_check && inner_then == outer_then && inner_else == outer_else)
+    {
         info!("applying flip then else nested ite term");
-        return Word::Ite(Box::new(inner_cond), Box::new(inner_else), Box::new(inner_then))
+        return Word::Ite(
+            Box::new(inner_cond),
+            Box::new(inner_else),
+            Box::new(inner_then),
+        );
     }
 
     Word::Ite(

@@ -1,5 +1,5 @@
-use std::{collections::HashMap, fs::File, io::Write, path::PathBuf};
 use itertools::Itertools;
+use std::{collections::HashMap, fs::File, io::Write, path::PathBuf};
 
 use im::Vector;
 use log::info;
@@ -9,7 +9,10 @@ use z3::{
     Context,
 };
 
-use crate::{val::{byte::Byte, constraint::Constraint, word::Word}, calldata::{Calldata, calldata_idx_string}};
+use crate::{
+    calldata::{calldata_idx_string, Calldata},
+    val::{byte::Byte, constraint::Constraint, word::Word},
+};
 
 use super::{make_z3_bitvec_from_word, make_z3_constraint};
 
@@ -39,7 +42,7 @@ pub fn write_script<'ctx>(
     bytes.into_iter().for_each(|b| match b {
         Byte::C(b, Some(s)) => {
             script_writer.write_byte_concrete(s, *b);
-        },
+        }
         Byte::S(s) => {
             script_writer.write_byte_symbolic(s);
         }
@@ -121,7 +124,11 @@ impl Smtlib2ScriptFileWriter {
     }
 
     fn write_variable<'ctx>(&mut self, variable_name: &String, w: &BV<'ctx>) {
-        let s = format!("(define-const |{}| (_ BitVec 256) {})\n", variable_name, w.to_string());
+        let s = format!(
+            "(define-const |{}| (_ BitVec 256) {})\n",
+            variable_name,
+            w.to_string()
+        );
         self.f.write(s.as_bytes()).unwrap();
     }
 

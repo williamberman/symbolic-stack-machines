@@ -9,15 +9,15 @@ impl Machine {
         let mut leaves = vec![];
         let mut pruned = vec![];
 
-        complete.into_iter().for_each(|mut m| {
-            match m.solve_z3_all(None) {
+        complete
+            .into_iter()
+            .for_each(|mut m| match m.solve_z3_all(None) {
                 Some(solve_results) => {
                     m.solve_results = Some(solve_results);
                     leaves.push(m);
                 }
                 None => pruned.push(m),
-            }
-        });
+            });
 
         SymResults { leaves, pruned }
     }

@@ -1,6 +1,6 @@
 pub mod assertions;
-pub mod mem_ptr;
 pub mod check_post_condition;
+pub mod mem_ptr;
 mod run_sym_inc;
 mod run_sym_solve_at_each_branch;
 mod run_sym_solve_at_end;
@@ -23,7 +23,7 @@ use crate::{
     memory::Memory,
     stack::Stack,
     val::{byte::Byte, constraint::Constraint, word::Word},
-    z3::{SolveResults, solve_z3_all},
+    z3::{solve_z3_all, SolveResults},
 };
 
 use self::{mem_ptr::MemPtr, sym_results::SymResults};
@@ -164,7 +164,10 @@ impl Machine {
         self.return_ptr.is_some()
     }
 
-    pub fn solve_z3_all(&self, additional_constraints: Option<Vector<Constraint>>) -> Option<SolveResults> {
+    pub fn solve_z3_all(
+        &self,
+        additional_constraints: Option<Vector<Constraint>>,
+    ) -> Option<SolveResults> {
         let words = vec![];
         let bytes = self.calldata.inner().clone();
         let variables = &self.variables();
@@ -176,10 +179,8 @@ impl Machine {
                 });
 
                 solve_z3_all(&constraints, words, bytes, variables, &self.calldata)
-            },
-            None => {
-                solve_z3_all(&self.constraints, words, bytes, variables, &self.calldata)
-            },
+            }
+            None => solve_z3_all(&self.constraints, words, bytes, variables, &self.calldata),
         }
     }
 }

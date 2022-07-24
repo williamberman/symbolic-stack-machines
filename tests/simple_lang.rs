@@ -42,7 +42,7 @@ fn test_symbolic_single_machine() {
         lit(3),
         add(),
         sub(),
-        stop()
+        stop(),
     ];
 
     let machine = Machine::new(pgm);
@@ -80,7 +80,7 @@ fn test_symbolic_multiple_machines() {
         stop(),
         push1(),
         lit(200),
-        stop()
+        stop(),
     ];
 
     let machine = Machine::new(pgm);
@@ -100,7 +100,14 @@ fn test_symbolic_multiple_machines() {
 
     assert_eq!(no_take_jump.stack.peek().unwrap(), &Word::from(100));
 
-    let take_jump_sol = solve_z3_all(&take_jump.constraints, vec![], vec!["x".into()], &HashMap::new(), &take_jump.calldata).unwrap();
+    let take_jump_sol = solve_z3_all(
+        &take_jump.constraints,
+        vec![],
+        vec!["x".into()],
+        &HashMap::new(),
+        &take_jump.calldata,
+    )
+    .unwrap();
 
     assert_eq!(
         take_jump_sol,
@@ -110,7 +117,14 @@ fn test_symbolic_multiple_machines() {
         }
     );
 
-    let no_take_jump_sol = solve_z3_all(&no_take_jump.constraints, vec![], vec!["x".into()], &HashMap::new(), &no_take_jump.calldata).unwrap();
+    let no_take_jump_sol = solve_z3_all(
+        &no_take_jump.constraints,
+        vec![],
+        vec!["x".into()],
+        &HashMap::new(),
+        &no_take_jump.calldata,
+    )
+    .unwrap();
 
     assert_eq!(
         no_take_jump_sol,
@@ -147,7 +161,7 @@ fn test_symbolic_multiple_machines_filtered() {
         push1(),         // 20
         lit(200),        // 21
         assert_ins(200), // 22
-        stop()           // 23
+        stop(),          // 23
     ];
 
     let machine = Machine::new(pgm);

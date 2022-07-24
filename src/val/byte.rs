@@ -4,7 +4,7 @@ use super::word::Word;
 pub enum Byte {
     C(u8, Option<String>),
     S(String),
-    Idx(Box<Word>, usize)
+    Idx(Box<Word>, usize),
 }
 
 pub static ZERO_BYTE: Byte = Byte::C(0, None);
@@ -35,7 +35,7 @@ impl Byte {
     pub fn is_concrete(&self) -> bool {
         match self {
             Byte::C(_, _) => true,
-            _ => false
+            _ => false,
         }
     }
 }

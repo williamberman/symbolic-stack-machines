@@ -1,5 +1,5 @@
-use im::Vector;
 use crate::val::word::Word;
+use im::Vector;
 
 #[derive(Clone, Default, Debug, PartialEq, Eq)]
 pub struct Stack {

@@ -1,6 +1,11 @@
 use std::rc::Rc;
 
-use symbolic_stack_machines::{instructions::{push1, calldataload, stop, shr, lit}, machine::Machine, calldata::Calldata, val::word::Word};
+use symbolic_stack_machines::{
+    calldata::Calldata,
+    instructions::{calldataload, lit, push1, shr, stop},
+    machine::Machine,
+    val::word::Word,
+};
 
 #[test]
 pub fn test_shr_optimization() {
@@ -11,7 +16,7 @@ pub fn test_shr_optimization() {
         push1(),
         lit(224),
         shr(),
-        stop()
+        stop(),
     ];
 
     let mut m = Machine::new(pgm);

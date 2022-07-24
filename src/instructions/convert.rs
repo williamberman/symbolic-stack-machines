@@ -65,7 +65,7 @@ impl From<u8> for Instruction {
         }
 
         if x >= 0x90 && x <= 0x9F {
-            return Instruction::Swap(x - 0x8F)
+            return Instruction::Swap(x - 0x8F);
         }
 
         match x {
@@ -92,7 +92,7 @@ impl From<u8> for Instruction {
             0x5B => Instruction::Jumpdest,
             0xF3 => Instruction::Return,
             0xFD => Instruction::Revert,
-            x => Instruction::Lit(x.into())
+            x => Instruction::Lit(x.into()),
         }
     }
 }
@@ -106,7 +106,5 @@ pub fn parse_bytecode(bytecode: &str) -> Vec<Instruction> {
 }
 
 pub fn parse_bytecode_thread_local(bytecode: &'static LocalKey<String>) -> Vec<Instruction> {
-    bytecode.with(|x| {
-        parse_bytecode(x.as_str())
-    })
+    bytecode.with(|x| parse_bytecode(x.as_str()))
 }

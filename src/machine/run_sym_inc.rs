@@ -50,7 +50,7 @@ impl Machine {
                             let z3_constraint = make_z3_constraint(
                                 &ctx,
                                 m.constraints.get(m.constraints.len() - 1).unwrap(),
-                                &m.variables()
+                                &m.variables(),
                             );
 
                             solver.assert(&z3_constraint);
@@ -73,10 +73,16 @@ impl Machine {
                                 let solve_results = make_solve_results(
                                     model,
                                     vec![],
-                                    m.calldata.inner().clone().into_iter().map(|b| {
-                                        let bv = make_z3_bitvec_from_byte(&ctx, &b, &m.variables());
-                                        (b, bv)
-                                    }).collect(),
+                                    m.calldata
+                                        .inner()
+                                        .clone()
+                                        .into_iter()
+                                        .map(|b| {
+                                            let bv =
+                                                make_z3_bitvec_from_byte(&ctx, &b, &m.variables());
+                                            (b, bv)
+                                        })
+                                        .collect(),
                                 );
                                 m.solve_results = Some(solve_results);
                                 cur = Some(m);

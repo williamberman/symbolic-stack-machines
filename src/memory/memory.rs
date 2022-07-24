@@ -1,6 +1,9 @@
 use im::Vector;
 
-use crate::val::{byte::{Byte, ZERO_BYTE}, word::{Word, BYTES_IN_WORD}};
+use crate::val::{
+    byte::{Byte, ZERO_BYTE},
+    word::{Word, BYTES_IN_WORD},
+};
 
 #[derive(Clone, Default, Debug, PartialEq, Eq)]
 pub struct Memory {
@@ -41,7 +44,7 @@ impl Memory {
         // TODO(will) - What are the actual EVM semantics for memory extension
         if self.inner.len() < xidx + 32 {
             let n_additional_bytes_needed = xidx + 32 - self.inner.len();
-            let iter = (0..n_additional_bytes_needed).map(|_| { ZERO_BYTE.clone() });
+            let iter = (0..n_additional_bytes_needed).map(|_| ZERO_BYTE.clone());
             self.inner.extend(iter);
         }
 

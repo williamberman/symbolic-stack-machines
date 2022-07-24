@@ -2,7 +2,7 @@ mod convert;
 use primitive_types::U256;
 
 use crate::{
-    machine::{Machine, mem_ptr::MemPtr},
+    machine::{mem_ptr::MemPtr, Machine},
     val::{byte::Byte, word::Word},
 };
 
@@ -123,7 +123,7 @@ impl Instruction {
                             Word::zero()
                         }
                     }
-                    op => op._eq_word(Word::zero())
+                    op => op._eq_word(Word::zero()),
                 };
 
                 m.stack.push(to_push);
@@ -239,19 +239,13 @@ impl Instruction {
             Instruction::Return => {
                 let offset = m.stack.pop().unwrap();
                 let length = m.stack.pop().unwrap();
-                m.return_ptr = Some(MemPtr{
-                    offset,
-                    length
-                });
+                m.return_ptr = Some(MemPtr { offset, length });
                 m.halt = true;
             }
             Instruction::Revert => {
                 let offset = m.stack.pop().unwrap();
                 let length = m.stack.pop().unwrap();
-                m.revert_ptr = Some(MemPtr{
-                    offset,
-                    length
-                });
+                m.revert_ptr = Some(MemPtr { offset, length });
                 m.halt = true;
             }
             Instruction::Lit(x) => {
@@ -263,7 +257,6 @@ impl Instruction {
                 m.constraints.push_back(op._eq(w.clone()));
 
                 m.pc += 1;
-
             }
         }
 

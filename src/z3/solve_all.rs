@@ -22,7 +22,7 @@ pub fn solve_z3_all(
     words: Vec<Word>,
     bytes: Vec<Byte>,
     variables: &HashMap<Word, String>,
-    calldata: &Calldata
+    calldata: &Calldata,
 ) -> Option<SolveResults> {
     let cfg = make_z3_config();
     let ctx = z3::Context::new(&cfg);

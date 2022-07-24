@@ -1,9 +1,9 @@
+pub mod calldata;
 pub mod instructions;
 pub mod machine;
 pub mod memory;
 pub mod stack;
+pub mod test_data;
+pub mod utils;
 pub mod val;
 pub mod z3;
-pub mod calldata;
-pub mod utils;
-pub mod test_data;
