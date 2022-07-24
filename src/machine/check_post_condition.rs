@@ -35,11 +35,7 @@ where
             constraints.push_back(c.not());
         });
 
-        m.constraints.iter().for_each(|c| {
-            constraints.push_back(c.clone());
-        });
-
-        let res = solve_z3_all(&constraints, vec![], vec![], &HashMap::new());
+        let res = m.solve_z3_all(Some(constraints));
 
         // There is a solutions such that all path constraints hold and at least one
         // of the post conditions does not hold.

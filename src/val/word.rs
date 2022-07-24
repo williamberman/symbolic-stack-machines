@@ -92,7 +92,7 @@ impl Into<[Instruction; 32]> for Word {
         let mut rv = [0; 32];
         let x: U256 = self.into();
         x.to_big_endian(&mut rv);
-        rv.map(|x| Instruction::Lit(Byte::C(x)))
+        rv.map(|x| Instruction::Lit(x.into()))
     }
 }
 
@@ -152,7 +152,7 @@ impl Word {
             sym_bytes[write_idx] = sym_byte.clone();
 
             match sym_byte {
-                Byte::C(x) => {
+                Byte::C(x, _) => {
                     bytes[write_idx] = x;
                 }
                 Byte::S(_) => {
@@ -340,7 +340,7 @@ impl std::ops::Shr for Word {
 
                 while i < 32 {
                     match bytes[i] {
-                        Byte::C(x) => {
+                        Byte::C(x, _) => {
                             n_concrete_bits += 8;
                             concrete_bytes[i] = x
                         }

@@ -30,7 +30,7 @@ pub fn safe_add_success() {
     m.constraints
         .push_back(x.clone()._lt_eq(x.clone() + y.clone()).into());
 
-    let res = m.run_sym(None);
+    let res = m.run_sym();
 
     let post_condition_violated = check_post_condition_violated(
         &res.leaves,
@@ -61,7 +61,7 @@ pub fn safe_add() {
         .push_back(x.clone()._lt_eq(x.clone() + y.clone()).into());
     m.constraints.push_back(x.clone()._eq(y.clone()));
 
-    let res = m.run_sym(None);
+    let res = m.run_sym();
 
     let post_condition_violated = check_post_condition_violated(
         &res.leaves,

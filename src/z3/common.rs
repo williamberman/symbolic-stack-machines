@@ -118,7 +118,7 @@ pub fn make_z3_bitvec_from_byte<'ctx>(
     variables: &HashMap<Word, String>,
 ) -> BV<'ctx> {
     match b {
-        Byte::C(x) => BV::from_u64(ctx, *x as u64, BYTE_BITVEC_SIZE),
+        Byte::C(x, _) => BV::from_u64(ctx, *x as u64, BYTE_BITVEC_SIZE),
         Byte::S(x) => BV::new_const(&ctx, x.clone(), BYTE_BITVEC_SIZE),
         Byte::Idx(word, idx) => {
             let indices = ByteIndices::from(*idx);

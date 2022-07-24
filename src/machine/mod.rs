@@ -23,7 +23,7 @@ use crate::{
     memory::Memory,
     stack::Stack,
     val::{byte::Byte, constraint::Constraint, word::Word},
-    z3::SolveResults,
+    z3::{SolveResults, solve_z3_all},
 };
 
 use self::{mem_ptr::MemPtr, sym_results::SymResults};
@@ -110,10 +110,6 @@ impl Machine {
         x
     }
 
-    pub fn run_sym(self, assertions: Option<Vec<&str>>) -> SymResults {
-        self.run_sym_solve_at_end(assertions)
-    }
-
     pub fn step(self) -> Machine {
         let i = self.pgm.get(self.pc).unwrap().clone();
 
@@ -166,5 +162,24 @@ impl Machine {
 
     pub fn returned(&self) -> bool {
         self.return_ptr.is_some()
+    }
+
+    pub fn solve_z3_all(&self, additional_constraints: Option<Vector<Constraint>>) -> Option<SolveResults> {
+        let words = vec![];
+        let bytes = self.calldata.inner().clone();
+        let variables = &self.variables();
+
+        match additional_constraints {
+            Some(mut constraints) => {
+                self.constraints.iter().for_each(|c| {
+                    constraints.push_back(c.clone());
+                });
+
+                solve_z3_all(&constraints, words, bytes, variables, &self.calldata)
+            },
+            None => {
+                solve_z3_all(&self.constraints, words, bytes, variables, &self.calldata)
+            },
+        }
     }
 }

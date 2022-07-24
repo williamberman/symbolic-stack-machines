@@ -49,7 +49,7 @@ fn test_symbolic_single_machine() {
 
     let res = machine.run().stack.peek().unwrap().clone();
 
-    let mut sym = [0; 32].map(|_| Byte::C(0));
+    let mut sym = [0; 32].map(|_| Byte::C(0, None));
     sym[31] = Byte::S("x".into());
 
     let expected = Word::Sub(Box::new(Word::from(5)), Box::new(Word::Concat(sym)));
@@ -100,7 +100,7 @@ fn test_symbolic_multiple_machines() {
 
     assert_eq!(no_take_jump.stack.peek().unwrap(), &Word::from(100));
 
-    let take_jump_sol = solve_z3_all(&take_jump.constraints, vec![], vec!["x".into()], &HashMap::new()).unwrap();
+    let take_jump_sol = solve_z3_all(&take_jump.constraints, vec![], vec!["x".into()], &HashMap::new(), &take_jump.calldata).unwrap();
 
     assert_eq!(
         take_jump_sol,
@@ -110,7 +110,7 @@ fn test_symbolic_multiple_machines() {
         }
     );
 
-    let no_take_jump_sol = solve_z3_all(&no_take_jump.constraints, vec![], vec!["x".into()], &HashMap::new()).unwrap();
+    let no_take_jump_sol = solve_z3_all(&no_take_jump.constraints, vec![], vec!["x".into()], &HashMap::new(), &no_take_jump.calldata).unwrap();
 
     assert_eq!(
         no_take_jump_sol,

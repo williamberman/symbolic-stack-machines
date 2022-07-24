@@ -35,7 +35,7 @@ impl Into<u8> for Instruction {
             Instruction::Revert => 0xFD,
             Instruction::Lit(x) => {
                 match x {
-                    Byte::C(x) => x,
+                    Byte::C(x, _) => x,
                     // 0xfe is invalid opcode
                     _ => 0xfe,
                 }
@@ -49,7 +49,7 @@ impl Into<Byte> for Instruction {
     fn into(self) -> Byte {
         match self {
             Instruction::Lit(x) => x,
-            x => Byte::C(x.into()),
+            x => Byte::C(x.into(), None),
         }
     }
 }
@@ -92,7 +92,7 @@ impl From<u8> for Instruction {
             0x5B => Instruction::Jumpdest,
             0xF3 => Instruction::Return,
             0xFD => Instruction::Revert,
-            x => Instruction::Lit(Byte::C(x))
+            x => Instruction::Lit(x.into())
         }
     }
 }

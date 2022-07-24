@@ -348,7 +348,7 @@ pub fn test_primality_check_arguments_symbolic() {
     ));
 
     // NOTE(will) - other sym run strats take too long to execute for tests
-    let res = m.run_sym(Some(vec![ASSERTION_FAILURE]));
+    let res = m.run_sym_check_assertions(Some(vec![ASSERTION_FAILURE]));
 
     let reverted = res.find_reverted(ASSERTION_FAILURE.into()).unwrap();
 

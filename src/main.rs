@@ -4,19 +4,20 @@ use log::info;
 use symbolic_stack_machines::{
     calldata::Calldata,
     instructions::parse_bytecode_thread_local,
-    machine::{assertions::ASSERTION_FAILURE, Machine},
+    machine::{
+        assertions::ASSERTION_FAILURE, check_post_condition::check_post_condition_violated, Machine,
+    },
     test_data::{
         PRIMALITY_CHECK_BYTECODE, PRIMALITY_CHECK_FUNCTION_SELECTOR_ARR, SAFE_ADD_BYTECODE,
         SAFE_ADD_FUNCTION_SELECTOR_ARR,
     },
-    val::word::Word,
 };
 
 pub fn main() {
     env_logger::init();
 
-    safe_add_example();
     // primality_check_example();
+    safe_add_example();
 }
 
 #[allow(dead_code)]
@@ -32,7 +33,7 @@ fn primality_check_example() {
     let calldata_s = Into::<String>::into(m.calldata.deref().clone());
     info!("symbolic_calldata: {}", calldata_s);
 
-    let res = m.run_sym(Some(vec![ASSERTION_FAILURE]));
+    let res = m.run_sym_check_assertions(Some(vec![ASSERTION_FAILURE]));
 
     let reverted = res.find_reverted(ASSERTION_FAILURE.into()).unwrap();
 
@@ -57,20 +58,19 @@ fn safe_add_example() {
 
     let vars = m.calldata.variables_name_lookup();
 
-    let x = vars.get("x").unwrap();
-    let y = vars.get("y").unwrap();
+    let x = vars.get("x").unwrap().clone();
+    let y = vars.get("y").unwrap().clone();
 
     m.constraints
-        .push_back(x.clone()._lt_eq(x.clone() + y.clone())._eq(Word::one()));
-    m.constraints.push_back(x.clone()._eq(y.clone()));
+        .push_back(x.clone()._lt_eq(x.clone() + y.clone()).into());
 
-    let res = m.run_sym(None);
+    let res = m.run_sym();
 
-    dbg!(res.leaves.len());
-    dbg!(res.pruned.len());
+    let post_condition_violated = check_post_condition_violated(
+        &res.leaves,
+        |m| m.returned(),
+        |m| vec![m.return_word().unwrap()._eq(x.clone() + y.clone())],
+    );
 
-    let returned = res.leaves.get(0).unwrap();
-
-    dbg!(returned.return_string());
-    dbg!(returned.revert_string());
+    info!("post condition violated: {}", post_condition_violated);
 }

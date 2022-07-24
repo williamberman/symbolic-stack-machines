@@ -32,19 +32,14 @@ impl Calldata {
         Word::from_bytes_vec(&self.inner, idx, BYTES_IN_WORD, true)
     }
 
-    // TODO(will) - n_symbolic_bytes should be usize
-    pub fn symbolic(function_selector: [u8; 4], n_symbolic_bytes: u8) -> Self {
+    pub fn symbolic(function_selector: [u8; 4], n_symbolic_bytes: usize) -> Self {
         let mut calldata: Vec<Byte> = Vec::from(function_selector)
             .into_iter()
-            .map(|x| x.into())
+            .enumerate()
+            .map(|(idx, x)| Byte::C(x, Some(calldata_idx_string(idx, false))))
             .collect();
 
-        let args = (5_u8..(5 + n_symbolic_bytes)).map(|idx| {
-            let mut s: String = "calldata[".into();
-            s.push_str(&idx.to_string());
-            s.push_str("]");
-            Byte::S(s)
-        });
+        let args = (4..(4 + n_symbolic_bytes)).map(|idx| Byte::S(calldata_idx_string(idx, false)));
 
         calldata.extend(args);
 
@@ -130,10 +125,28 @@ impl Into<String> for Calldata {
                 rv.push_str(&s);
                 rv.push_str(")");
             }
-            Byte::C(x) => rv.push_str(&hex::encode(vec![x])),
+            Byte::C(x, _) => rv.push_str(&hex::encode(vec![x])),
             Byte::Idx(_w, _idx) => rv.push_str("(TODO - compound expression)"),
         });
 
         rv
     }
+}
+
+pub fn calldata_idx_string(i: usize, symbol_bars: bool) -> String {
+    let mut s: String = if symbol_bars {
+        "|calldata[".into()
+    } else {
+        "calldata[".into()
+    };
+
+    s.push_str(&i.to_string());
+
+    if symbol_bars {
+        s.push_str("]|");
+    } else {
+        s.push_str("]");
+    }
+
+    s
 }
