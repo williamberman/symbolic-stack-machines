@@ -173,12 +173,14 @@ impl Word {
     }
 
     pub fn write_bytes(bs: &mut Vector<Byte>, idx: usize, val: Word) {
+        // Write from high byte to low byte
         for i in 0..=31 {
-            let idx_into_val = 31 - i;
             let byte = match &val {
-                Word::C(u256) => u256.byte(idx_into_val).into(),
+                // High byte starts at idx 31
+                Word::C(u256) => u256.byte(31 - i).into(),
+                // High byte starts at idx 0
                 // TODO(will) - ideally these all point to the same word instead of cloning each time
-                val => val.clone().get(idx_into_val),
+                val => val.clone().get(i),
             };
             bs[idx + i] = byte;
         }
