@@ -5,7 +5,7 @@ use std::time::Instant;
 use z3::ast::{Ast, BV};
 use z3::SatResult;
 
-use crate::calldata::Calldata;
+use crate::machine::Machine;
 use crate::val::{byte::Byte, constraint::Constraint, word::Word};
 use crate::z3::common::{
     make_solve_results, make_z3_bitvec_from_byte, make_z3_config, make_z3_constraint,
@@ -22,14 +22,14 @@ pub fn solve_z3_all(
     words: Vec<Word>,
     bytes: Vec<Byte>,
     variables: &HashMap<Word, String>,
-    calldata: &Calldata,
+    m: &Machine,
 ) -> Option<SolveResults> {
     let cfg = make_z3_config();
     let ctx = z3::Context::new(&cfg);
     let solver = z3::Solver::new(&ctx);
 
     if DUMP_CONSTRAINTS {
-        write_script(&ctx, constraints, &words, &bytes, variables, calldata);
+        write_script(&ctx, constraints, &words, &bytes, variables, m);
     }
 
     let bytes: Vec<(Byte, BV)> = bytes

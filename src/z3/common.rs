@@ -84,6 +84,11 @@ pub fn make_z3_bitvec_from_word<'ctx>(
             make_z3_bitvec_from_word(ctx, l, variables)
                 .bvult(&make_z3_bitvec_from_word(ctx, r, variables)),
         ),
+        Word::LtEq(l, r) => bool_to_bitvec(
+            ctx,
+            make_z3_bitvec_from_word(ctx, l, variables)
+                .bvule(&make_z3_bitvec_from_word(ctx, r, variables)),
+        ),
         Word::Gt(l, r) => bool_to_bitvec(
             ctx,
             make_z3_bitvec_from_word(ctx, l, variables)

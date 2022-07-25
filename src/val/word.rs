@@ -19,6 +19,7 @@ pub enum Word {
     Sub(Box<Word>, Box<Word>),
     Div(Box<Word>, Box<Word>),
     Lt(Box<Word>, Box<Word>),
+    LtEq(Box<Word>, Box<Word>),
     Gt(Box<Word>, Box<Word>),
     Slt(Box<Word>, Box<Word>),
     Shr(Box<Word>, Box<Word>),
@@ -245,10 +246,7 @@ impl Word {
     }
 
     pub fn _lt_eq(self, other: Word) -> Word {
-        Word::BitOr(
-            Box::new(self.clone()._lt(other.clone())),
-            Box::new(self._eq(other).ite(Word::one(), Word::zero())),
-        )
+        Word::LtEq(Box::new(self), Box::new(other))
     }
 
     pub fn _gt(self, other: Word) -> Word {

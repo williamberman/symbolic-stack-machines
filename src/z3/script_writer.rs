@@ -11,6 +11,7 @@ use z3::{
 
 use crate::{
     calldata::{calldata_idx_string, Calldata},
+    machine::Machine,
     val::{byte::Byte, constraint::Constraint, word::Word},
 };
 
@@ -30,9 +31,17 @@ pub fn write_script<'ctx>(
     words: &Vec<Word>,
     bytes: &Vec<Byte>,
     variables: &HashMap<Word, String>,
-    calldata: &Calldata,
+    m: &Machine,
 ) {
     let mut script_writer = Smtlib2ScriptFileWriter::new();
+
+    let empty_hashmap = HashMap::new();
+
+    let mut variable_names: Vec<String> = variables
+        .iter()
+        .map(|(_, var_name)| var_name.clone())
+        .collect();
+    variable_names.push("calldata".to_string());
 
     info!(
         "writing constraints to: {}",
@@ -41,10 +50,10 @@ pub fn write_script<'ctx>(
 
     bytes.into_iter().for_each(|b| match b {
         Byte::C(b, Some(s)) => {
-            script_writer.write_byte_concrete(s, *b);
+            script_writer.define_byte(s, *b);
         }
         Byte::S(s) => {
-            script_writer.write_byte_symbolic(s);
+            script_writer.declare_byte(s);
         }
         _ => {}
     });
@@ -53,22 +62,29 @@ pub fn write_script<'ctx>(
 
     words.into_iter().for_each(|w| match w {
         Word::S(s) => {
-            script_writer.write_word(s);
+            script_writer.declare_word(s);
         }
         _ => {}
     });
 
     script_writer.write_newline();
 
-    script_writer.write_calldata(calldata);
+    script_writer.write_calldata(&m.calldata);
 
     script_writer.write_newline();
 
-    let empty = HashMap::new();
     variables.iter().for_each(|(word, variable_name)| {
-        let bv = make_z3_bitvec_from_word(ctx, word, &empty).simplify();
-        script_writer.write_variable(variable_name, &bv);
+        let bv = make_z3_bitvec_from_word(ctx, word, &empty_hashmap).simplify();
+        script_writer.define_word(variable_name, &bv);
     });
+
+    script_writer.write_newline();
+
+    if let Some(returns) = m.return_word() {
+        let bv = make_z3_bitvec_from_word(ctx, &returns, variables).simplify();
+        script_writer.define_word(&"returns".to_string(), &bv);
+        variable_names.push("returns".to_string());
+    }
 
     script_writer.write_newline();
 
@@ -79,7 +95,7 @@ pub fn write_script<'ctx>(
 
     script_writer.write_newline();
 
-    script_writer.write_postlude();
+    script_writer.write_postlude(variable_names);
 }
 
 impl Smtlib2ScriptFileWriter {
@@ -108,28 +124,28 @@ impl Smtlib2ScriptFileWriter {
         self.write_newline();
     }
 
-    fn write_byte_concrete(&mut self, s: &String, value: u8) {
+    fn define_byte(&mut self, s: &String, value: u8) {
         let formatted = format!("(define-const |{}| (_ BitVec 8) #x{:02x})\n", s, value);
         self.f.write(formatted.as_bytes()).unwrap();
     }
 
-    fn write_byte_symbolic(&mut self, s: &String) {
+    fn declare_byte(&mut self, s: &String) {
         let formatted = format!("(declare-const |{}| (_ BitVec 8))\n", s);
         self.f.write(formatted.as_bytes()).unwrap();
     }
 
-    fn write_word(&mut self, s: &String) {
-        let formatted = format!("(declare-const |{}| (_ BitVec 256))\n", s);
-        self.f.write(formatted.as_bytes()).unwrap();
-    }
-
-    fn write_variable<'ctx>(&mut self, variable_name: &String, w: &BV<'ctx>) {
+    fn define_word<'ctx>(&mut self, variable_name: &String, w: &BV<'ctx>) {
         let s = format!(
             "(define-const |{}| (_ BitVec 256) {})\n",
             variable_name,
             w.to_string()
         );
         self.f.write(s.as_bytes()).unwrap();
+    }
+
+    fn declare_word(&mut self, s: &String) {
+        let formatted = format!("(declare-const |{}| (_ BitVec 256))\n", s);
+        self.f.write(formatted.as_bytes()).unwrap();
     }
 
     fn write_calldata(&mut self, calldata: &Calldata) {
@@ -155,9 +171,13 @@ impl Smtlib2ScriptFileWriter {
         self.f.write(s.as_bytes()).unwrap();
     }
 
-    fn write_postlude(&mut self) {
+    fn write_postlude(&mut self, variable_names: Vec<String>) {
+        let variable_names_str: String =
+            variable_names.into_iter().intersperse(" ".to_string()).collect();
+        let get_values = format!("(get-value ({}))\n", variable_names_str);
+
         self.f.write("(check-sat)\n".as_bytes()).unwrap();
-        self.f.write("(get-value (calldata))\n".as_bytes()).unwrap();
+        self.f.write(get_values.as_bytes()).unwrap();
     }
 
     fn write_newline(&mut self) {

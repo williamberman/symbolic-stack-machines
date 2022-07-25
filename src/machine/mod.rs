@@ -178,9 +178,9 @@ impl Machine {
                     constraints.push_back(c.clone());
                 });
 
-                solve_z3_all(&constraints, words, bytes, variables, &self.calldata)
+                solve_z3_all(&constraints, words, bytes, variables, &self)
             }
-            None => solve_z3_all(&self.constraints, words, bytes, variables, &self.calldata),
+            None => solve_z3_all(&self.constraints, words, bytes, variables, &self),
         }
     }
 }
