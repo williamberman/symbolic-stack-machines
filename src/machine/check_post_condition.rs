@@ -10,6 +10,8 @@ use super::Machine;
 // The path constraints hold and any one of the post conditions are violated
 pub fn check_post_condition_violated<Filter, PostCondition>(
     machines: &Vec<Machine>,
+    // TODO(will) - probably should not pass a filter and follow how hevm
+    // adds a false constraint
     filter: Filter,
     post_condition: PostCondition,
 ) -> bool
