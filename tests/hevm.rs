@@ -10,7 +10,7 @@ use symbolic_stack_machines::{
 };
 
 #[test]
-pub fn safe_add_success() {
+pub fn safe_add_tautology() {
     let pgm = parse_bytecode_thread_local(&SAFE_ADD_BYTECODE);
 
     let mut m = Machine::new(pgm);
@@ -40,7 +40,7 @@ pub fn safe_add_success() {
 }
 
 #[test]
-pub fn safe_add() {
+pub fn safe_add_x_equaly_y_implies_x_plus_y_equals_y_times_2() {
     let pgm = parse_bytecode_thread_local(&SAFE_ADD_BYTECODE);
 
     let mut m = Machine::new(pgm);
