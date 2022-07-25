@@ -5,7 +5,7 @@ contract MultipleContracts2Caller {
     uint256 x;
     MultipleContracts2Callee callee;
 
-    function call_Callee() public {
+    function call_callee() public {
         callee = new MultipleContracts2Callee();
         // should fail since a.x() can be anything
         assert(callee.x() == x);
