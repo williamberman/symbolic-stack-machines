@@ -105,7 +105,7 @@ fn test_symbolic_multiple_machines() {
         vec![],
         vec!["x".into()],
         &HashMap::new(),
-        &take_jump.calldata,
+        &take_jump,
     )
     .unwrap();
 
@@ -122,7 +122,7 @@ fn test_symbolic_multiple_machines() {
         vec![],
         vec!["x".into()],
         &HashMap::new(),
-        &no_take_jump.calldata,
+        &no_take_jump,
     )
     .unwrap();
 
