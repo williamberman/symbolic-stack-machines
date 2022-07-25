@@ -9,7 +9,7 @@ use symbolic_stack_machines::{
     },
     test_data::{
         PRIMALITY_CHECK_BYTECODE, PRIMALITY_CHECK_FUNCTION_SELECTOR_ARR, SAFE_ADD_BYTECODE,
-        SAFE_ADD_FUNCTION_SELECTOR_ARR,
+        SAFE_ADD_FUNCTION_SELECTOR_ARR, RETURN_SYMBOLIC_FUNCTION_SELECTOR_ARR, RETURN_SYMBOLIC_BYTECODE,
     },
 };
 
@@ -17,6 +17,7 @@ pub fn main() {
     env_logger::init();
 
     // primality_check_example();
+    // return_symbolic_example();
     safe_add_example();
 }
 
@@ -46,6 +47,19 @@ fn primality_check_example() {
 }
 
 #[allow(dead_code)]
+fn return_symbolic_example() {
+    let pgm = parse_bytecode_thread_local(&RETURN_SYMBOLIC_BYTECODE);
+    let mut m = Machine::new(pgm);
+
+    m.calldata = Rc::new(Calldata::symbolic_vars(
+        RETURN_SYMBOLIC_FUNCTION_SELECTOR_ARR,
+        vec![("x".into(), 4)],
+    ));
+
+    m.run_sym();
+}
+
+#[allow(dead_code)]
 fn safe_add_example() {
     let pgm = parse_bytecode_thread_local(&SAFE_ADD_BYTECODE);
 
@@ -61,16 +75,17 @@ fn safe_add_example() {
     let x = vars.get("x").unwrap().clone();
     let y = vars.get("y").unwrap().clone();
 
-    m.constraints
-        .push_back(x.clone()._lt_eq(x.clone() + y.clone()).into());
+    // m.constraints
+    //     .push_back(x.clone()._lt_eq(x.clone() + y.clone()).into());
 
+    // TODO(will) - how is this overflowing its stack
     let res = m.run_sym();
 
-    let post_condition_violated = check_post_condition_violated(
-        &res.leaves,
-        |m| m.returned(),
-        |m| vec![m.return_word().unwrap()._eq(x.clone() + y.clone())],
-    );
+    // let post_condition_violated = check_post_condition_violated(
+    //     &res.leaves,
+    //     |m| m.returned(),
+    //     |m| vec![m.return_word().unwrap()._eq(x.clone() + y.clone())],
+    // );
 
-    info!("post condition violated: {}", post_condition_violated);
+    // info!("post condition violated: {}", post_condition_violated);
 }

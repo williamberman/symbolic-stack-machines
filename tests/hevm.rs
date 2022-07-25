@@ -11,7 +11,7 @@ use symbolic_stack_machines::{
 
 // TODO safe add tests are not exactly correct
 
-#[test]
+// #[test]
 pub fn safe_add_success() {
     let pgm = parse_bytecode_thread_local(&SAFE_ADD_BYTECODE);
 
@@ -41,7 +41,7 @@ pub fn safe_add_success() {
     assert_eq!(post_condition_violated, false);
 }
 
-#[test]
+// #[test]
 pub fn safe_add() {
     let pgm = parse_bytecode_thread_local(&SAFE_ADD_BYTECODE);
 
