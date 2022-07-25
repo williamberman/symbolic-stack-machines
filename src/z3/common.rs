@@ -8,8 +8,8 @@ use z3::{
 
 use crate::val::{byte::Byte, constraint::Constraint, word::Word};
 
-static WORD_BITVEC_SIZE: u32 = 256;
-static BYTE_BITVEC_SIZE: u32 = 8;
+pub static WORD_BITVEC_SIZE: u32 = 256;
+pub static BYTE_BITVEC_SIZE: u32 = 8;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SolveResults {

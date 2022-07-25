@@ -8,7 +8,7 @@ use z3::SatResult;
 use crate::machine::Machine;
 use crate::val::{byte::Byte, constraint::Constraint, word::Word};
 use crate::z3::common::{
-    make_solve_results, make_z3_bitvec_from_byte, make_z3_config, make_z3_constraint,
+    make_solve_results, make_z3_bitvec_from_byte, make_z3_config, make_z3_constraint, WORD_BITVEC_SIZE,
 };
 use crate::z3::make_z3_bitvec_from_word;
 use crate::z3::script_writer::write_script;
@@ -51,6 +51,14 @@ pub fn solve_z3_all(
     constraints.iter().for_each(|c| {
         let z3_constraint = make_z3_constraint(&ctx, c, variables).simplify();
         solver.assert(&z3_constraint);
+    });
+
+    let empty_hash = HashMap::new();
+
+    variables.iter().for_each(|(word, variable_name)| {
+        let bv_const = BV::new_const(&ctx, variable_name.clone(), WORD_BITVEC_SIZE);
+        let bv = make_z3_bitvec_from_word(&ctx, word, &empty_hash);
+        solver.assert(&bv_const._eq(&bv));
     });
 
     let timer = Instant::now();
