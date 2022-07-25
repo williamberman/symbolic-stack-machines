@@ -1,5 +1,3 @@
-use crate::z3::solve_z3_all;
-
 use super::{assertions::DEFAULT_ASSERTIONS, sym_results::SymResults, Machine};
 
 impl Machine {

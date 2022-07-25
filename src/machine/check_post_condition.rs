@@ -1,8 +1,8 @@
-use std::{collections::HashMap, ops::Not};
+use std::ops::Not;
 
 use im::Vector;
 
-use crate::{val::constraint::Constraint, z3::solve_z3_all};
+use crate::val::constraint::Constraint;
 
 use super::Machine;
 

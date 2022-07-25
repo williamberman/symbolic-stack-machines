@@ -26,7 +26,7 @@ use crate::{
     z3::{solve_z3_all, SolveResults},
 };
 
-use self::{mem_ptr::MemPtr, sym_results::SymResults};
+use self::mem_ptr::MemPtr;
 
 #[derive(Debug)]
 pub struct Machine {
