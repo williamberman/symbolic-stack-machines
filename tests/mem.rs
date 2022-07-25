@@ -1,5 +1,4 @@
 use im::Vector;
-use primitive_types::U256;
 use symbolic_stack_machines::{
     instructions::{lit, mstore, push1, stop},
     machine::Machine,

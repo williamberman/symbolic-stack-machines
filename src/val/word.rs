@@ -288,7 +288,7 @@ impl Word {
                 // TODO(will) - should be able to take ownership without cloning?
                 x.get(idx).unwrap().clone()
             }
-            x => x.get(idx)
+            x => Byte::Idx(Box::new(x), idx) 
         }
     }
 }

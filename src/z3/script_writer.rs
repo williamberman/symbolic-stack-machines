@@ -149,6 +149,7 @@ impl Smtlib2ScriptFileWriter {
     }
 
     fn write_calldata(&mut self, calldata: &Calldata) {
+        #[allow(unstable_name_collisions)]
         let bytes: String = calldata
             .inner()
             .iter()
@@ -172,8 +173,11 @@ impl Smtlib2ScriptFileWriter {
     }
 
     fn write_postlude(&mut self, variable_names: Vec<String>) {
-        let variable_names_str: String =
-            variable_names.into_iter().intersperse(" ".to_string()).collect();
+        #[allow(unstable_name_collisions)]
+        let variable_names_str: String = variable_names
+            .into_iter()
+            .intersperse(" ".to_string())
+            .collect();
         let get_values = format!("(get-value ({}))\n", variable_names_str);
 
         self.f.write("(check-sat)\n".as_bytes()).unwrap();

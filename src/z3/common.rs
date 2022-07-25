@@ -191,9 +191,7 @@ impl From<usize> for ByteIndices {
 }
 
 mod tests {
-    use std::collections::HashMap;
-
-    use z3::ast::{Ast, BV};
+    // use z3::ast::{Ast, BV};
 
     #[allow(dead_code)]
     static BS: [u8; 32] = [
@@ -211,7 +209,8 @@ mod tests {
         for i in 0..=31 {
             let byte = crate::val::byte::Byte::Idx(Box::new(w.clone()), i);
 
-            let bv_byte = super::make_z3_bitvec_from_byte(&ctx, &byte, &HashMap::new()).simplify();
+            let bv_byte = super::make_z3_bitvec_from_byte(&ctx, &byte, &std::collections::HashMap::new());
+            let bv_byte = z3::ast::Ast::simplify(&bv_byte);
 
             let extracted_byte = bv_byte.as_u64().unwrap() as usize;
 
@@ -229,15 +228,18 @@ mod tests {
         let w = crate::val::word::Word::Concat(BS.map(|x| x.into()));
 
         // #x000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
-        let bv = super::make_z3_bitvec_from_word(&ctx, &w, &HashMap::new()).simplify();
+        let bv = super::make_z3_bitvec_from_word(&ctx, &w, &std::collections::HashMap::new());
+        let bv = z3::ast::Ast::simplify(&bv);
 
         // #x1f
-        let high_byte_extracted = BV::extract(&bv, 7, 0).simplify();
+        let high_byte_extracted = z3::ast::BV::extract(&bv, 7, 0);
+        let high_byte_extracted = z3::ast::Ast::simplify(&high_byte_extracted);
 
         assert_eq!(high_byte_extracted.as_u64().unwrap(), 31);
 
         // #x00
-        let low_byte_extracted = BV::extract(&bv, 255, 248).simplify();
+        let low_byte_extracted = z3::ast::BV::extract(&bv, 255, 248);
+        let low_byte_extracted = z3::ast::Ast::simplify(&low_byte_extracted);
 
         assert_eq!(high_byte_extracted.as_u64().unwrap(), 31);
         assert_eq!(low_byte_extracted.as_u64().unwrap(), 0);
