@@ -178,7 +178,7 @@ impl Word {
             let byte = match &val {
                 Word::C(u256) => u256.byte(idx_into_val).into(),
                 // TODO(will) - ideally these all point to the same word instead of cloning each time
-                val => Byte::Idx(Box::new(val.clone()), idx_into_val),
+                val => val.clone().get(idx_into_val),
             };
             bs[idx + i] = byte;
         }
@@ -277,6 +277,16 @@ impl Word {
                 rv.into()
             }
             (l, r) => Word::Slt(Box::new(l), Box::new(r)),
+        }
+    }
+
+    pub fn get(self, idx: usize) -> Byte {
+        match self {
+            Word::Concat(x) => {
+                // TODO(will) - should be able to take ownership without cloning?
+                x.get(idx).unwrap().clone()
+            }
+            x => x.get(idx)
         }
     }
 }

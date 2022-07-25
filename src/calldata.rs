@@ -68,13 +68,7 @@ impl Calldata {
     }
 
     pub fn solve(&self, solutions: &HashMap<Byte, u8>) -> String {
-        let concrete_calldata: Vec<u8> = self
-            .inner
-            .iter()
-            .map(|sym_byte| solutions.get(sym_byte).unwrap().clone())
-            .collect();
-
-        hex::encode(concrete_calldata)
+        Byte::solve(self.inner.clone(), solutions)
     }
 
     pub fn variables(&self) -> Vec<(String, Word)> {

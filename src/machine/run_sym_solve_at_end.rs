@@ -20,6 +20,29 @@ impl Machine {
         SymResults { leaves, pruned }
     }
 
+    pub fn run_sym_returns(self) -> SymResults {
+        let complete = self.run_sym_inner();
+
+        let mut leaves = vec![];
+        let mut pruned = vec![];
+
+        complete.into_iter().for_each(|mut m| {
+            if m.returned() {
+                match m.solve_z3_all(None) {
+                    Some(solve_results) => {
+                        m.solve_results = Some(solve_results);
+                        leaves.push(m);
+                    }
+                    None => pruned.push(m),
+                }
+            } else {
+                pruned.push(m)
+            }
+        });
+
+        SymResults { leaves, pruned }
+    }
+
     pub fn run_sym_check_assertions(self, assertions: Option<Vec<&str>>) -> SymResults {
         let complete = self.run_sym_inner();
 

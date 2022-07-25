@@ -6,8 +6,11 @@ pub static SAFE_ADD_FUNCTION_SELECTOR_ARR: [u8; 4] = [0x77_u8, 0x16, 0x02, 0xf7]
 
 pub static RETURN_CONSTANT_FUNCTION_SELECTOR_ARR: [u8; 4] = [0xc2, 0x98, 0x55, 0x78];
 
+pub static RETURN_SYMBOLIC_FUNCTION_SELECTOR_ARR: [u8; 4] = [0xb3, 0xde, 0x64, 0x8b];
+
 thread_local! {
     pub static PRIMALITY_CHECK_BYTECODE: String = fs::read_to_string("test-data/PrimalityCheck.bin-runtime").unwrap();
     pub static SAFE_ADD_BYTECODE: String = fs::read_to_string("test-data/SafeAdd.bin-runtime").unwrap();
     pub static RETURN_CONSTANT_BYTECODE: String = fs::read_to_string("test-data/ReturnConstant.bin-runtime").unwrap();
+    pub static RETURN_SYMBOLIC_BYTECODE: String = fs::read_to_string("test-data/ReturnSymbolic.bin-runtime").unwrap();
 }

@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use super::word::Word;
 
 #[derive(Clone, PartialEq, Eq, Debug, Hash)]
@@ -8,6 +10,17 @@ pub enum Byte {
 }
 
 pub static ZERO_BYTE: Byte = Byte::C(0, None);
+
+impl Byte {
+    pub fn solve(bs: Vec<Byte>, solutions: &HashMap<Byte, u8>) -> String {
+        let concrete: Vec<u8> = bs
+            .iter()
+            .map(|sym_byte| solutions.get(sym_byte).unwrap().clone())
+            .collect();
+
+        hex::encode(concrete)
+    }
+}
 
 impl Into<u8> for Byte {
     fn into(self) -> u8 {
